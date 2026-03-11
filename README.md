@@ -9,7 +9,7 @@ TechHub est une plateforme communautaire destinée aux étudiants, développeurs
 ---
 # Architecture Globale
 
-![Architecture](Global Project Architecture.png)
+![Architecture](https://github.com/ENSIAS-MEH/development-platform-geeks_team/blob/6c262ec4757055c7f0639911067b52cc620ccc98/Global%20Project%20Architecture.png)
 
 
 # 1. Introduction
