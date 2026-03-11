@@ -200,7 +200,7 @@ La communication entre services utilise un **message broker (Kafka / RabbitMQ)**
 
 L'infrastructure peut être déployée avec **Docker et Kubernetes**.
 
-*(Insérer ici le diagramme d’architecture du projet)*
+
 
 ---
 
