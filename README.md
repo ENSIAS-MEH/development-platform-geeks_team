@@ -7,6 +7,10 @@
 TechHub est une plateforme communautaire destinée aux étudiants, développeurs et passionnés de technologie afin de connecter **événements tech, projets collaboratifs et communautés** dans un même espace.
 
 ---
+# Architecture Globale
+
+![Architecture](Global Project Architecture.png)
+
 
 # 1. Introduction
 
