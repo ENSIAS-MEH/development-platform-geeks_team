@@ -278,11 +278,11 @@ TechHub vise à devenir **une plateforme centrale pour l’écosystème tech ét
 Équipe :
 
 * Alae LABHAL
-* Hafsa
-* Halima
+* Hafsa ABBAR
+* Halima ANEJARI
 * Kawtar LAMEGHAIZI
 
 Encadrant :
 
-* Pr. Hamloui
+* Pr. Mahmoud El Hamlaoui
 ---
