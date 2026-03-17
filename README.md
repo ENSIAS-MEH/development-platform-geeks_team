@@ -279,7 +279,7 @@ TechHub vise à devenir **une plateforme centrale pour l’écosystème tech ét
 
 * Alae LABHAL (Alae-eng)
 * Hafsa ABBAR (Hafsaabbar)
-* Halima ANEJARI
+* Halima ANEJARI (Hali24-tech)
 * Kawtar LAMEGHAIZI (KLdevs007)
 
 Encadrant :
