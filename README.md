@@ -277,10 +277,10 @@ TechHub vise à devenir **une plateforme centrale pour l’écosystème tech ét
 
 Équipe :
 
-* Alae LABHAL
-* Hafsa ABBAR
+* Alae LABHAL (Alae-eng)
+* Hafsa ABBAR (Hafsaabbar)
 * Halima ANEJARI
-* Kawtar LAMEGHAIZI
+* Kawtar LAMEGHAIZI (KLdevs007)
 
 Encadrant :
 
