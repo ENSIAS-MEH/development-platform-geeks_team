@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173")
 //@Tag(name = "Authentication", description = "Register, login, logout, token refresh")
 public class AuthController {
 
