@@ -1,7 +1,10 @@
 package com.projtechhub.techhub.dto.response;
 
 import com.projtechhub.techhub.entities.Skill;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -9,6 +12,8 @@ import java.util.List;
  * @author pc
  **/
 @Builder
+@Getter
+@AllArgsConstructor
 public class UserProfileResponse {
 
     private String id;

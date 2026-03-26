@@ -1,13 +1,17 @@
 package com.projtechhub.techhub.dto.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 
 import java.util.List;
 
 /**
  * @author pc
  **/
+@Getter
 @Builder
+@AllArgsConstructor
 public class UserResponse {
 
     private String id;            // UUID.toString() — frontend User interface: id: string
