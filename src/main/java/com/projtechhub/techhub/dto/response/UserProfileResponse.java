@@ -1,8 +1,14 @@
 package com.projtechhub.techhub.dto.response;
 
+import com.projtechhub.techhub.entities.Skill;
+import lombok.Builder;
+
+import java.util.List;
+
 /**
  * @author pc
  **/
+@Builder
 public class UserProfileResponse {
 
     private String id;
@@ -20,7 +26,7 @@ public class UserProfileResponse {
     private String websiteUrl;    // extra field not in base User — full profile only
     private String headline;      // extra field — "Full-stack dev | Open to collabs"
 
-    //private List<SkillDetail> skills;   // HERE you can use the rich object
+    private List<String> skills;   // HERE you can use the rich object
     // because MyProfilePage will display level etc.
     // this is different from UserResponse.skills
 }

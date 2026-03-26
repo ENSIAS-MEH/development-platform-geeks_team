@@ -1,11 +1,15 @@
 package com.projtechhub.techhub.dto.request;
 
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.validator.constraints.URL;
 
 /**
  * @author pc
  **/
+@Getter
+@Setter
 public class UpdateProfileRequest {
 
     @Size(max = 100)
