@@ -14,6 +14,7 @@ import com.projtechhub.techhub.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +40,8 @@ public class UserService {
                 .getContext()
                 .getAuthentication()
                 .getName();
+
+        System.out.println("getCurrentUser email: '" + email + "'");
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
     }
@@ -102,34 +105,36 @@ public class UserService {
     // ── POST /api/users/me/skills ─────────────────────────────────────────
     // Returns List<String> — just the updated full list of skill names
     // so the frontend can replace its local state in one shot
-
+    private String normalizeSkillName(String name) {
+        if (name == null || name.isBlank()) return name;
+        String trimmed = name.trim();
+        return Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1).toLowerCase();
+    }
     @Transactional
     public List<String> addSkill(SkillRequest request) {
         User user = getCurrentUser();
 
-        // Duplicate check
-        skillRepository.findByUser_IdAndNameIgnoreCase(user.getId(), request.getName())
-                .ifPresent(existing -> {
-                    throw new IllegalArgumentException(
-                            "Skill '" + request.getName() + "' already exists"
-                    );
-                });
-
         Skill skill = Skill.builder()
                 .user(user)
-                .name(request.getName())
-                .level(Skill.Level.BEGINNER) // default — not shown in frontend anyway
+                .name(normalizeSkillName(request.getName()))  // trim whitespace
+                .level(Skill.Level.BEGINNER)
                 .build();
 
-        skillRepository.save(skill);
+        try {
+            skillRepository.saveAndFlush(skill);  // saveAndFlush forces immediate DB write
+            // so the constraint violation happens HERE
+            // not later when the transaction commits
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException(
+                    "Skill '" + request.getName() + "' already exists"
+            );
+        }
 
-        // Return the full updated list so frontend doesn't need a second GET call
         return skillRepository.findByUser_Id(user.getId())
                 .stream()
                 .map(Skill::getName)
                 .toList();
     }
-
     // ── DELETE /api/users/me/skills/{skillId} ─────────────────────────────
     // Returns updated list of skill names after deletion
 
@@ -141,6 +146,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Skill not found"));
 
         skillRepository.delete(skill);
+        skillRepository.flush();
 
         return skillRepository.findByUser_Id(user.getId())
                 .stream()

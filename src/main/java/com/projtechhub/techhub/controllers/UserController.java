@@ -18,6 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     private final UserService userService;
@@ -64,4 +65,7 @@ public class UserController {
     public ResponseEntity<List<String>> deleteSkill(@PathVariable UUID skillId) {
         return ResponseEntity.ok(userService.deleteSkill(skillId));
     }
+
+
+
 }
