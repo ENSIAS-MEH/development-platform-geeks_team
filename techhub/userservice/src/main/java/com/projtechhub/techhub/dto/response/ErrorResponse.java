@@ -1,10 +1,13 @@
 package com.projtechhub.techhub.dto.response;
 
+import lombok.Builder;
+
 import java.util.Map;
 
 /**
  * @author pc
  **/
+@Builder
 public class ErrorResponse {
 
     private String timestamp;     // ISO string — Instant.now().toString()

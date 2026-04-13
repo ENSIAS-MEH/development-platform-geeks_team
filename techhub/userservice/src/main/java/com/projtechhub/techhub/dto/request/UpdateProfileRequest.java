@@ -20,6 +20,7 @@ public class UpdateProfileRequest {
 
     @Size(max = 500)
     private String bio;
+    private String email;
 
     private String location;
 

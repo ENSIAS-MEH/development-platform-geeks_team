@@ -1,7 +1,9 @@
 package com.projtechhub.techhub.services;
 
+import com.projtechhub.techhub.dto.request.ChangePasswordRequest;
 import com.projtechhub.techhub.dto.request.SkillRequest;
 import com.projtechhub.techhub.dto.request.UpdateProfileRequest;
+import com.projtechhub.techhub.dto.response.ChangePasswordResponse;
 import com.projtechhub.techhub.dto.response.UserProfileResponse;
 import com.projtechhub.techhub.dto.response.UserResponse;
 import com.projtechhub.techhub.entities.Skill;
@@ -11,13 +13,16 @@ import com.projtechhub.techhub.exceptions.ResourceNotFoundException;
 import com.projtechhub.techhub.repositories.SkillRepository;
 import com.projtechhub.techhub.repositories.UserProfileRepository;
 import com.projtechhub.techhub.repositories.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +36,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
     private final UserProfileRepository userProfileRepository;
-
+    private final PasswordEncoder passwordEncoder;
     // ── Helper ────────────────────────────────────────────────────────────
 
     private User getCurrentUser() {
@@ -39,6 +44,8 @@ public class UserService {
                 .getContext()
                 .getAuthentication()
                 .getName();
+
+        System.out.println("getCurrentUser email: '" + email + "'");
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
     }
@@ -102,34 +109,36 @@ public class UserService {
     // ── POST /api/users/me/skills ─────────────────────────────────────────
     // Returns List<String> — just the updated full list of skill names
     // so the frontend can replace its local state in one shot
-
+    private String normalizeSkillName(String name) {
+        if (name == null || name.isBlank()) return name;
+        String trimmed = name.trim();
+        return Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1).toLowerCase();
+    }
     @Transactional
     public List<String> addSkill(SkillRequest request) {
         User user = getCurrentUser();
 
-        // Duplicate check
-        skillRepository.findByUser_IdAndNameIgnoreCase(user.getId(), request.getName())
-                .ifPresent(existing -> {
-                    throw new IllegalArgumentException(
-                            "Skill '" + request.getName() + "' already exists"
-                    );
-                });
-
         Skill skill = Skill.builder()
                 .user(user)
-                .name(request.getName())
-                .level(Skill.Level.BEGINNER) // default — not shown in frontend anyway
+                .name(normalizeSkillName(request.getName()))  // trim whitespace
+                .level(Skill.Level.BEGINNER)
                 .build();
 
-        skillRepository.save(skill);
+        try {
+            skillRepository.saveAndFlush(skill);  // saveAndFlush forces immediate DB write
+            // so the constraint violation happens HERE
+            // not later when the transaction commits
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException(
+                    "Skill '" + request.getName() + "' already exists"
+            );
+        }
 
-        // Return the full updated list so frontend doesn't need a second GET call
         return skillRepository.findByUser_Id(user.getId())
                 .stream()
                 .map(Skill::getName)
                 .toList();
     }
-
     // ── DELETE /api/users/me/skills/{skillId} ─────────────────────────────
     // Returns updated list of skill names after deletion
 
@@ -141,6 +150,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Skill not found"));
 
         skillRepository.delete(skill);
+        skillRepository.flush();
 
         return skillRepository.findByUser_Id(user.getId())
                 .stream()
@@ -198,6 +208,7 @@ public class UserService {
                 .build();
     }
 
+
     private String mapUserType(com.projtechhub.techhub.entities.UserType userType) {
         if (userType == null) return "Developer";
         return switch (userType) {
@@ -207,4 +218,30 @@ public class UserService {
             case COMPANY   -> "Company";
         };
     }
+
+
+    public ChangePasswordResponse updatePassword(@Valid ChangePasswordRequest request) {
+        User user = getCurrentUser();
+
+        // Step 1 — verify current password matches what's stored
+        // BCrypt.matches(rawPassword, hashedPassword) — never compare plain text
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        // Step 2 — verify new password and confirm match
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("New password and confirmation do not match");
+        }
+
+        // Step 3 — hash the new password and save
+        // passwordEncoder.encode() runs BCrypt — never store plain text
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return ChangePasswordResponse.builder()
+                .message("Password updated successfully")
+                .build();
+    }
+
 }

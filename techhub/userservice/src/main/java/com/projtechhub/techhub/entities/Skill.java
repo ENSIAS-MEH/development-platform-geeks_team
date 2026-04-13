@@ -11,7 +11,14 @@ import java.util.UUID;
 @Table(name = "skills",
         indexes = {
                 @Index(name = "idx_skills_user_id", columnList = "user_id")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_skill_user_name",
+                        columnNames = {"user_id", "name"}
+                )
         }
+
 )
 @Getter
 @Setter

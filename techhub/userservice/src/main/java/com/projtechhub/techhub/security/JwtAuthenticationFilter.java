@@ -51,6 +51,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
+
+
         final String authHeader = request.getHeader("Authorization");
 
         // No Authorization header or wrong format — skip silently.
@@ -61,8 +63,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         final String jwt = authHeader.substring(7); // strip "Bearer "
-
+        System.out.println(">>> Authorization header: " + authHeader);
+        System.out.println(">>> JWT: " + jwt);
         try {
+
             final String userEmail = jwtService.extractUsername(jwt);
 
             // Only process if we have an email and no authentication is set yet for this request.
@@ -102,6 +106,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
             // Any JWT parsing error (expired, malformed, wrong signature) lands here.
             // We just log it and continue — Spring Security will return 401 because
             // SecurityContextHolder was never set.
