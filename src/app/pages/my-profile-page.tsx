@@ -2,10 +2,61 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { ProjectCard } from "../components/project-card";
-import { Mail, Github, Linkedin, ExternalLink, MapPin, Calendar, Edit } from "lucide-react";
+import { Mail, Github, Linkedin, ExternalLink, MapPin, Calendar, Edit, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useEffect } from "react";
+import { userService } from "../services/userService";
+import { Link, useNavigate } from "react-router";
 
-export function MyProfilePage() {
-  const skills = ["React", "TypeScript", "Python", "Node.js", "AWS", "Docker", "Machine Learning", "UI/UX"];
+
+export  function MyProfilePage() {
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const data = await userService.getMyProfile();
+        setUserInfo(data);
+      } catch (err: any) {
+        setError(err.response?.data?.message || "Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []); // empty array = run once on mount
+
+    // ── Loading state ──────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[#56B2BB]" />
+      </div>
+    );
+  }
+
+  // ── Error state ────────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <div className="p-8 text-center text-red-500">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  // ── Guard — should never happen but prevents crash if user is null ─────
+  if (!userInfo) return null;
+
+  // ── Get initials for avatar ────────────────────────────────────────────
+  const initials = userInfo.name
+    ? userInfo.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "?";
+
+  const skills =userInfo.skills;
   
   const projects = [
     {
@@ -42,55 +93,65 @@ export function MyProfilePage() {
         <div className="bg-white rounded-xl p-8 border border-[#BAC7CC]/30 shadow-lg mb-8">
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="w-32 h-32 bg-[#56B2BB] rounded-xl flex items-center justify-center text-white text-5xl font-bold flex-shrink-0">
-              AD
+              {userInfo.avatarUrl
+                ? <img src={userInfo.avatarUrl} alt={userInfo.name} className="w-full h-full rounded-xl object-cover" />
+                : initials
+              }
             </div>
             
             <div className="flex-1">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-[#1D2233] mb-2">Alex Davis</h1>
-                  <p className="text-[#717182] mb-3">Full Stack Developer & AI Enthusiast</p>
+                  <h1 className="text-3xl font-bold text-[#1D2233] mb-2">{userInfo.name}</h1>
+                  <p className="text-[#717182] mb-3">{userInfo.headline || "No headline"}</p>
                   <div className="flex items-center gap-4 text-sm text-[#717182]">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      San Francisco, CA
+                      {userInfo.location}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      Joined March 2025
-                    </span>
+                    {userInfo.joinedAt && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        Joined {new Date(userInfo.joinedAt).toLocaleDateString("en-US", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric"
+                        })}
+                      </span> )}
                   </div>
                 </div>
-                <Button className="bg-[#56B2BB] hover:bg-[#56B2BB]/90 text-white">
+                <Link to="/dashboard/profile/edit">
+                    <Button  className="bg-[#56B2BB] hover:bg-[#56B2BB]/90 text-white"> 
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
                 </Button>
+                </Link>
+                
               </div>
 
               <p className="text-[#1D2233] mb-4">
-                Passionate about building innovative solutions with AI and modern web technologies. 
-                Always looking for exciting projects and collaborations in the tech space.
+                {userInfo.bio}
               </p>
 
               <div className="flex flex-wrap gap-3 mb-4">
                 <a href="#" className="flex items-center gap-2 text-[#56B2BB] hover:underline">
                   <Github className="w-4 h-4" />
-                  github.com/alexdavis
+                  {userInfo.githubUrl}
                 </a>
                 <a href="#" className="flex items-center gap-2 text-[#56B2BB] hover:underline">
                   <Linkedin className="w-4 h-4" />
-                  linkedin.com/in/alexdavis
+                  {userInfo.linkedinUrl}
                 </a>
                 <a href="#" className="flex items-center gap-2 text-[#56B2BB] hover:underline">
                   <ExternalLink className="w-4 h-4" />
-                  alexdavis.dev
+                  {userInfo.portfolioUrl}
                 </a>
               </div>
 
               <div>
                 <p className="text-sm text-[#717182] mb-2">Skills</p>
                 <div className="flex flex-wrap gap-2">
-                  {skills.map((skill) => (
+                  {skills.map((skill: string) => (
                     <Badge key={skill} className="bg-[#56B2BB]/10 text-[#56B2BB] hover:bg-[#56B2BB]/20">
                       {skill}
                     </Badge>

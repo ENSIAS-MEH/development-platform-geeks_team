@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { RootLayout } from "./layouts/root-layout";
 import { AuthLayout } from "./layouts/auth-layout";
 import { DashboardLayout } from "./layouts/dashboard-layout";
+import { EditProfilePage } from "./pages/edit-profile-page";
 
 // Public pages
 import { HomePage } from "./pages/home-page";
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, Component: DashboardPage },
           { path: "profile", Component: MyProfilePage },
+          { path: "profile/edit", Component: EditProfilePage },
           { path: "projects/create", Component: CreateProjectPage },
           { path: "collaborators", Component: FindCollaboratorsPage },
           { path: "teams", Component: MyTeamsPage },

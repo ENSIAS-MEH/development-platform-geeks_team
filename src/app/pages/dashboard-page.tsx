@@ -1,10 +1,52 @@
 import { StatCard } from "../components/stat-card";
 import { EventCard } from "../components/event-card";
 import { ProjectCard } from "../components/project-card";
-import { Calendar, FolderGit2, Users, TrendingUp, Bell } from "lucide-react";
+import { Calendar, FolderGit2, Users, TrendingUp, Bell, Loader2 } from "lucide-react";
 import { Badge } from "../components/ui/badge";
-
+import { useEffect, useState } from "react";
+import { userService } from "../services/userService";
 export function DashboardPage() {
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const data = await userService.getMyProfile();
+        setUserInfo(data);
+      } catch (err: any) {
+        setError(err.response?.data?.message || "Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []); // empty array = run once on mount
+
+    // ── Loading state ──────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[#56B2BB]" />
+      </div>
+    );
+  }
+
+  // ── Error state ────────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <div className="p-8 text-center text-red-500">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  // ── Guard — should never happen but prevents crash if user is null ─────
+  if (!userInfo) return null;
+
   const stats = [
     { icon: Calendar, label: "Registered Events", value: "5", trend: "+2 this week", trendUp: true },
     { icon: FolderGit2, label: "Active Projects", value: "3", trend: "1 new contribution", trendUp: true },
@@ -56,7 +98,7 @@ export function DashboardPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-[#1D2233] mb-2">Welcome back, Alex!</h1>
+        <h1 className="text-4xl font-bold text-[#1D2233] mb-2">{`Welcome back, ${userInfo.name}!`}</h1>
         <p className="text-lg text-[#717182]">Here's what's happening with your projects and events</p>
       </div>
 
