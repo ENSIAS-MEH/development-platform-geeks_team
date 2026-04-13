@@ -1,9 +1,11 @@
 package com.projtechhub.techhub.controllers;
 
+import com.projtechhub.techhub.dto.request.ChangePasswordRequest;
 import com.projtechhub.techhub.dto.request.SkillRequest;
 import com.projtechhub.techhub.dto.request.UpdateProfileRequest;
 import com.projtechhub.techhub.dto.response.UserProfileResponse;
 import com.projtechhub.techhub.dto.response.UserResponse;
+import com.projtechhub.techhub.dto.response.ChangePasswordResponse;
 import com.projtechhub.techhub.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +20,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
-
     private final UserService userService;
 
     @GetMapping("/me")
@@ -64,4 +66,13 @@ public class UserController {
     public ResponseEntity<List<String>> deleteSkill(@PathVariable UUID skillId) {
         return ResponseEntity.ok(userService.deleteSkill(skillId));
     }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<ChangePasswordResponse> updatePassword(
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        return ResponseEntity.ok(userService.updatePassword(request));
+    }
+
+
 }

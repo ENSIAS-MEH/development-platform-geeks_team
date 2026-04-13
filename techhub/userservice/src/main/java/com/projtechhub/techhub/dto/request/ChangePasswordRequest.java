@@ -2,10 +2,16 @@ package com.projtechhub.techhub.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @author pc
  **/
+@AllArgsConstructor
+@Getter
+@Setter
 public class ChangePasswordRequest {
 
     @NotBlank
