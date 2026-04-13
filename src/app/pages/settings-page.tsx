@@ -56,18 +56,7 @@ export function SettingsPage() {
         <TabsContent value="account">
           <div className="space-y-6 max-w-2xl">
 
-            {/* Edit Profile card */}
-            <div className="bg-white rounded-xl p-6 border border-[#BAC7CC]/30">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-[#1D2233]">Profile Information</h3>
-                  <p className="text-sm text-[#717182] mt-1">
-                    Update your name, bio, avatar, social links and more.
-                  </p>
-                </div>
-               
-              </div>
-            </div>
+
 
             {/* Change Password card */}
             <div className="bg-white rounded-xl p-6 border border-[#BAC7CC]/30">
