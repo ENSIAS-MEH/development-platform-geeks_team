@@ -23,8 +23,18 @@ export default defineConfig({
   // ── Dev proxy: forward /api → Community Service backend ──────────
   server: {
     proxy: {
+      '/api/auth': {
+        target: 'http://127.0.0.1:8081',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/users': {
+        target: 'http://127.0.0.1:8081',
+        changeOrigin: true,
+        secure: false,
+      },
       '/api': {
-        target: 'http://localhost:8085',
+        target: 'http://127.0.0.1:8085',
         changeOrigin: true,
         secure: false,
       },
