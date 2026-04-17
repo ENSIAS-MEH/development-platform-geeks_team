@@ -2,7 +2,6 @@ import { createBrowserRouter } from "react-router";
 import { RootLayout } from "./layouts/root-layout";
 import { AuthLayout } from "./layouts/auth-layout";
 import { DashboardLayout } from "./layouts/dashboard-layout";
-import { EditProfilePage } from "./pages/edit-profile-page";
 
 // Public pages
 import { HomePage } from "./pages/home-page";
@@ -19,6 +18,7 @@ import { EventDetailPage } from "./pages/event-detail-page";
 import { FindCollaboratorsPage } from "./pages/find-collaborators-page";
 import { MyTeamsPage } from "./pages/my-teams-page";
 import { CommunityGroupsPage } from "./pages/community-groups-page";
+import { GroupDetailPage } from "./pages/group-detail-page";
 import { NotificationsPage } from "./pages/notifications-page";
 import { MessagingPage } from "./pages/messaging-page";
 import { SettingsPage } from "./pages/settings-page";
@@ -58,11 +58,11 @@ export const router = createBrowserRouter([
         children: [
           { index: true, Component: DashboardPage },
           { path: "profile", Component: MyProfilePage },
-          { path: "profile/edit", Component: EditProfilePage },
           { path: "projects/create", Component: CreateProjectPage },
           { path: "collaborators", Component: FindCollaboratorsPage },
           { path: "teams", Component: MyTeamsPage },
           { path: "communities", Component: CommunityGroupsPage },
+          { path: "communities/:groupId", Component: GroupDetailPage },
           { path: "notifications", Component: NotificationsPage },
           { path: "messages", Component: MessagingPage },
           { path: "settings", Component: SettingsPage },

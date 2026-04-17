@@ -86,4 +86,20 @@ export const apiEndpoints = {
     update: '/api/users/me',
     list: '/api/users',
   },
+  // ── Community Service (port 8085) ────────────────────────────────────
+  community: {
+    groups: '/api/groups',
+    groupDetail: '/api/groups/:groupId',
+    groupSearch: '/api/groups/search',
+    joinGroup: '/api/groups/:groupId/join',
+    leaveGroup: '/api/groups/:groupId/leave',
+    groupMembers: '/api/groups/:groupId/members',
+    groupPosts: '/api/groups/:groupId/posts',
+    postDetail: '/api/groups/:groupId/posts/:postId',
+    postUpvote: '/api/groups/:groupId/posts/:postId/upvote',
+    postPin: '/api/groups/:groupId/posts/:postId/pin',
+    postComments: '/api/groups/:groupId/posts/:postId/comments',
+    commentUpvote: '/api/groups/:groupId/posts/:postId/comments/:commentId/upvote',
+    popularPosts: '/api/posts/popular',
+  },
 } as const;

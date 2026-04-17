@@ -36,7 +36,7 @@ export interface User {
   id: string;
   name: string;
   email?: string;
-  role: 'Student' | 'Developer' | 'Organizer' | 'Company';
+  role: 'Student' | 'Developer' | 'Organizer' | 'Admin';
   skills: string[];
   location?: string;
   bio?: string;
@@ -57,7 +57,7 @@ export interface Team {
   createdAt: string;
 }
 
-// Community Types
+// Community Types (legacy – used by other pages)
 export interface Community {
   id: string;
   name: string;
@@ -67,6 +67,91 @@ export interface Community {
   activity: 'Very Active' | 'Active' | 'Moderate' | 'Low';
   imageUrl?: string;
   createdAt?: string;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Community Service Backend Types (match Spring Boot DTOs exactly)
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Enums ───────────────────────────────────────────────────────────────
+export type Topic = 'WEB' | 'MOBILE' | 'AI_ML' | 'DEVOPS' | 'SECURITY' | 'GAME_DEV' | 'DATA' | 'OTHER';
+export type PostType = 'DISCUSSION' | 'ANNOUNCEMENT' | 'RESOURCE';
+export type MemberRole = 'OWNER' | 'MODERATOR' | 'MEMBER';
+
+// ── Response DTOs ───────────────────────────────────────────────────────
+export interface GroupResponse {
+  id: string;
+  name: string;
+  description: string;
+  topic: Topic;
+  isPublic: boolean;
+  ownerId: string;
+  memberCount: number;
+  createdAt: string;
+}
+
+export interface PostResponse {
+  id: string;
+  groupId: string;
+  authorId: string;
+  title: string;
+  content: string;
+  type: PostType;
+  upvotes: number;
+  commentCount: number;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommentResponse {
+  id: string;
+  postId: string;
+  authorId: string;
+  content: string;
+  parentCommentId: string | null;
+  upvotes: number;
+  createdAt: string;
+  replies: CommentResponse[] | null;
+}
+
+export interface GroupMemberResponse {
+  id: string;
+  groupId: string;
+  userId: string;
+  role: MemberRole;
+  joinedAt: string;
+}
+
+// ── Request DTOs ────────────────────────────────────────────────────────
+export interface GroupRequest {
+  name: string;
+  description?: string;
+  topic: Topic;
+  isPublic?: boolean;
+}
+
+export interface PostRequest {
+  title: string;
+  content: string;
+  type: PostType;
+}
+
+export interface CommentRequest {
+  content: string;
+  parentCommentId?: string;
+}
+
+// ── Spring Boot Paginated Response ──────────────────────────────────────
+export interface SpringPage<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;        // current page (0-indexed)
+  first: boolean;
+  last: boolean;
+  empty: boolean;
 }
 
 // Notification Types
