@@ -12,9 +12,9 @@ spring:
 
   # ── PostgreSQL ──────────────────────────────────────────────────────
   datasource:
-    url: jdbc:postgresql://localhost:5432/community_db
+    url: jdbc:postgresql://127.0.0.1:5435/community_db
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    password: postgres
     driver-class-name: org.postgresql.Driver
 
   # ── JPA / Hibernate ────────────────────────────────────────────────
@@ -36,7 +36,7 @@ spring:
   # ── Redis ──────────────────────────────────────────────────────────
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
+      host: ${REDIS_HOST:127.0.0.1}
       port: ${REDIS_PORT:6379}
 
   # ── Cache ──────────────────────────────────────────────────────────

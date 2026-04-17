@@ -1,7 +1,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080',  // your Spring Boot port
+  // Let Vite proxy handle requests using relative paths
+  baseURL: '',
   headers: {
     'Content-Type': 'application/json',
   },

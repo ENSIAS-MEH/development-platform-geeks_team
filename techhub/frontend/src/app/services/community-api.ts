@@ -29,21 +29,24 @@ import type {
  */
 const API_BASE = "/api";
 
-/**
- * Mock user ID – used as X-User-Id header since there's no auth service yet.
- * This matches one of the seed users in the database migration.
- */
-const MOCK_USER_ID = "00000000-0000-0000-0000-000000000001";
-
 // ─── Helpers ────────────────────────────────────────────────────────────
 
 async function request<T>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> {
+  let userId = "00000000-0000-0000-0000-000000000001"; // Fallback just in case
+  try {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user && user.id) userId = user.id;
+    }
+  } catch(e) {}
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-User-Id": MOCK_USER_ID,
+    "X-User-Id": userId,
     ...(options.headers as Record<string, string> || {}),
   };
 
