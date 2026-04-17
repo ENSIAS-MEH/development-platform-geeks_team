@@ -1,5 +1,29 @@
 // Constants for TechHub platform
 
+// ── Community Service Enums (match backend exactly) ──────────────────
+export const COMMUNITY_TOPICS = [
+  { value: 'WEB', label: 'Web Development' },
+  { value: 'MOBILE', label: 'Mobile' },
+  { value: 'AI_ML', label: 'AI / Machine Learning' },
+  { value: 'DEVOPS', label: 'DevOps' },
+  { value: 'SECURITY', label: 'Security' },
+  { value: 'GAME_DEV', label: 'Game Development' },
+  { value: 'DATA', label: 'Data' },
+  { value: 'OTHER', label: 'Other' },
+] as const;
+
+export const POST_TYPES = [
+  { value: 'DISCUSSION', label: 'Discussion' },
+  { value: 'ANNOUNCEMENT', label: 'Announcement' },
+  { value: 'RESOURCE', label: 'Resource' },
+] as const;
+
+export const MEMBER_ROLES = [
+  { value: 'OWNER', label: 'Owner' },
+  { value: 'MODERATOR', label: 'Moderator' },
+  { value: 'MEMBER', label: 'Member' },
+] as const;
+
 // Event Types
 export const EVENT_TYPES = [
   'Hackathon',
