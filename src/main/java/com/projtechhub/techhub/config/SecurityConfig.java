@@ -1,13 +1,8 @@
 package com.projtechhub.techhub.config;
 
-/**
- * @author pc
- **/
-
-
+import com.projtechhub.techhub.OAuth2SuccessHandler;
 import com.projtechhub.techhub.security.JwtAuthenticationFilter;
 import com.projtechhub.techhub.security.UserDetailsServiceImpl;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,7 +15,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -31,83 +25,65 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-/**
- * Central security configuration.
- *
- * Key decisions made here:
- * - Session is STATELESS — no cookies, no server-side session, JWT only
- * - CSRF disabled — not needed for stateless REST APIs
- * - Our JwtAuthenticationFilter runs before Spring's default auth filter
- * - CORS configured here so it applies to all requests including preflight OPTIONS
- */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity          // enables @PreAuthorize on methods if needed later
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsServiceImpl userDetailsService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                // Disable CSRF — not needed for stateless REST APIs.
-//                // CSRF protects cookie-based sessions; we use JWT in headers.
-//                .csrf(AbstractHttpConfigurer::disable)
-//
-//                // CORS — allow frontend origin to call us
-//                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-//
-//                // Route access rules
-//                .authorizeHttpRequests(auth -> auth
-//
-//                        // Public — no token needed
-//                        .requestMatchers(
-//                                "/api/auth/**",           // login, register, refresh
-//                                "/swagger-ui/**",         // Swagger UI
-//                                "/swagger-ui.html",
-//                                "/v3/api-docs/**",        // OpenAPI spec
-//                                "/actuator/health"        // health check
-//                        ).permitAll()
-//
-//                        // Everything else requires a valid JWT
-//                        .anyRequest().authenticated()
-//                )
         http
                 .csrf(AbstractHttpConfigurer::disable)
+
+                // CORS must be explicitly applied in the chain
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 .httpBasic(AbstractHttpConfigurer::disable)
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/auth/refresh",
-                                "/api/auth/logout"
+                                "/api/auth/logout",
+                                "/login/oauth2/**",        // OAuth2 redirect URI — must be public
+                                "/oauth2/authorization/**", // OAuth2 initiation — must be public
+                                "/favicon.ico",
+                                "/actuator/health"
                         ).permitAll()
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
 
-                // No server-side session — every request is independent
+                // OAuth2 login — Spring handles the redirect to GitHub automatically
+                // when frontend hits /oauth2/authorization/github
+                .oauth2Login(oauth -> oauth
+                        .successHandler(oAuth2SuccessHandler)
+                        .failureHandler((req, res, ex) -> {
+                            System.out.println("OAuth2 failed: " + ex.getMessage());
+                            ex.printStackTrace();
+                            res.sendRedirect("http://localhost:5173/auth/login?error=oauth_failed");
+                        })
+                )
+
+                // IF_REQUIRED — needed for OAuth2 which uses session to store state
+                // between the initial redirect and GitHub's callback
+                // Cannot be STATELESS when using OAuth2
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
 
-                // Wire our custom auth provider (uses UserDetailsServiceImpl + BCrypt)
                 .authenticationProvider(authenticationProvider())
 
-                // Our JWT filter runs before Spring's default username/password filter
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /**
-     * Tells Spring Security how to authenticate users:
-     * - Load user by email via UserDetailsServiceImpl
-     * - Verify password with BCrypt
-     *
-     * AuthenticationManager calls this internally during login.
-     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
@@ -115,11 +91,6 @@ public class SecurityConfig {
         return provider;
     }
 
-    /**
-     * AuthenticationManager is what AuthService calls directly to authenticate
-     * a login attempt — authManager.authenticate(new UsernamePasswordAuthenticationToken(email, password))
-     * It internally uses the AuthenticationProvider above.
-     */
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config
@@ -127,28 +98,21 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    /**
-     * BCrypt with strength 12 — strong enough for production, not too slow for dev.
-     * Strength 10 is minimum acceptable, 12 is the recommended default.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
 
-    /**
-     * CORS configuration — allows the React frontend to call this API.
-     * During development the frontend runs on localhost:5173 (Vite default).
-     *
-     * In production replace localhost:5173 with your actual frontend domain.
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
+        // Must be explicit origins when allowCredentials is true
+        // Wildcard + credentials = browser rejects it
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173",   // Vite dev server
-                "http://localhost:3000"    // in case they use CRA or another port
+                "http://localhost:5173",
+                "http://localhost:3000",
+                "http://localhost:8080"
         ));
 
         config.setAllowedMethods(List.of(
@@ -158,17 +122,16 @@ public class SecurityConfig {
         config.setAllowedHeaders(List.of(
                 "Authorization",
                 "Content-Type",
-                "X-User-Id",       // sent by gateway to downstream services
-                "X-User-Roles"     // sent by gateway to downstream services
+                "X-User-Id",
+                "X-User-Roles",
+                "Cookie"         // needed for OAuth2 session cookie
         ));
 
-        // Allow frontend to read the Authorization header from responses
         config.setExposedHeaders(List.of("Authorization"));
 
-        // Allow cookies if needed (e.g. for refresh token in httpOnly cookie)
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(true); // needed for session cookie in OAuth2
 
-        config.setMaxAge(3600L); // cache preflight response for 1 hour
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
