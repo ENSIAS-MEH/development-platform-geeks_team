@@ -9,6 +9,7 @@ import { HomePage } from "./pages/home-page";
 import { ExploreEventsPage } from "./pages/explore-events-page";
 import { ExploreProjectsPage } from "./pages/explore-projects-page";
 import { LoginPage } from "./pages/login-page";
+import AuthCallBack from "./pages/AuthCallBack";
 
 // Authenticated Developer/Student pages
 import { DashboardPage } from "./pages/dashboard-page";
@@ -37,17 +38,21 @@ export const router = createBrowserRouter([
     children: [
       // Public pages
       { index: true, Component: HomePage },
+      
       { path: "explore/events", Component: ExploreEventsPage },
       { path: "explore/projects", Component: ExploreProjectsPage },
       { path: "events/:id", Component: EventDetailPage },
       { path: "projects/:id", Component: ProjectDetailPage },
-      
+      // auth fallback
+      { path: "auth/callback", Component: AuthCallBack },
+
       // Auth
       {
         path: "auth",
         Component: AuthLayout,
         children: [
           { path: "login", Component: LoginPage },
+
         ],
       },
       
