@@ -1,11 +1,13 @@
 package com.projtechhub.techhub.services;
 
 import com.projtechhub.techhub.dto.request.ChangePasswordRequest;
+import com.projtechhub.techhub.dto.request.PrivacyRequest;
 import com.projtechhub.techhub.dto.request.SkillRequest;
 import com.projtechhub.techhub.dto.request.UpdateProfileRequest;
 import com.projtechhub.techhub.dto.response.ChangePasswordResponse;
 import com.projtechhub.techhub.dto.response.UserProfileResponse;
 import com.projtechhub.techhub.dto.response.UserResponse;
+import com.projtechhub.techhub.dto.response.UserSummaryDTO;
 import com.projtechhub.techhub.entities.Skill;
 import com.projtechhub.techhub.entities.User;
 import com.projtechhub.techhub.entities.UserProfile;
@@ -15,6 +17,7 @@ import com.projtechhub.techhub.repositories.UserProfileRepository;
 import com.projtechhub.techhub.repositories.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -169,7 +173,7 @@ public class UserService {
         return UserResponse.builder()
                 .id(user.getId().toString())
                 .name(user.getDisplayName())
-                .email(user.getEmail())
+                .email(user.getShowEmail() != null && user.getShowEmail()? user.getEmail() : null)
                 .role(mapUserType(user.getUserType()))
                 .skills(skillNames)
                 .location(user.getLocation())
@@ -184,7 +188,7 @@ public class UserService {
     private UserProfileResponse buildUserProfileResponse(User user, UserProfile profile) {
         // Same as UserResponse but with extra profile fields
         // skills still List<String> — consistent with everywhere else
-        List<String> skillNames = user.getSkills() != null
+        List<String> skillNames = (user.getSkills() != null && !user.getSkills().isEmpty())
                 ? user.getSkills().stream().map(Skill::getName).toList()
                 : List.of();
 
@@ -192,6 +196,9 @@ public class UserService {
                 .id(user.getId().toString())
                 .name(user.getDisplayName())
                 .email(user.getEmail())
+                .showEmail(user.getShowEmail() != null ? user.getShowEmail() : false)  // include the setting so frontend can display the toggle state
+                .authProvider(user.getAuthProvider() != null ? user.getAuthProvider() : "local")
+
                 .role(mapUserType(user.getUserType()))
                 .bio(user.getBio())
                 .avatarUrl(user.getAvatarUrl())
@@ -244,4 +251,29 @@ public class UserService {
                 .build();
     }
 
+    public void updatePrivacy(PrivacyRequest request) {
+        User user = getCurrentUser();
+        if (request.getShowEmail() != null) {
+            user.setShowEmail(request.getShowEmail());
+        }
+        userRepository.save(user);
+    }
+
+
+    public Page<UserSummaryDTO> getAllUsersExcept(String userEmail, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return userRepository.findAllExcept(userEmail, pageable)
+                .map(this::mapToSummaryDTO); // Page has its own .map()
+    }
+
+    private UserSummaryDTO mapToSummaryDTO(User u) {
+        return UserSummaryDTO.builder()
+                .id(u.getId())
+                .name(u.getDisplayName())
+                .userType(String.valueOf(u.getUserType()))
+                .bio(u.getBio())
+                .location(u.getLocation())
+                .skills(u.getSkills())
+                .build();
+    }
 }

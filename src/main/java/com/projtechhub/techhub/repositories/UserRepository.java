@@ -33,4 +33,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      );
 
      Optional<User> findById(UUID id);
+
+     @Query("SELECT u FROM User u WHERE u.email != :email")
+     Page<User> findAllExcept(@Param("email") String email, Pageable pageable);
 }

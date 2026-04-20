@@ -79,7 +79,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         // Find existing user or create new one
         final String finalName = name;
         User user = userRepository.findByEmail(email)
-                .orElseGet(() -> createNewUser(email, finalName));
+                .orElseGet(() -> createNewUser(email, finalName, provider));
 
         log.info("User found/created: {}", user.getEmail());
 
@@ -163,13 +163,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     // ── Create new user for first-time OAuth login ────────────────────────
 
-    private User createNewUser(String email, String name) {
+    private User createNewUser(String email, String name, String provider) {
         log.info("Creating new OAuth2 user: {}", email);
         User user = new User();
         user.setEmail(email);
         user.setPasswordHash("OAUTH2_NO_PASSWORD"); // never used for login
         user.setDisplayName(name);
         user.setEnabled(true);
+        user.setAuthProvider(provider);
         user.setEmailVerified(true);  // provider already verified their email
         user.setUserType(UserType.DEVELOPER); // default — user can change in settings
         return userRepository.save(user);
