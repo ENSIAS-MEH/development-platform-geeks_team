@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
@@ -29,7 +29,31 @@ export function EditProfilePage() {
     const { id, value } = e.target;
     setForm((prev) => ({ ...prev, [id]: value }));
   };
+  useEffect(() => {
+  const loadProfile = async () => {
+    try {
+      const data = await userService.getMyProfile();
 
+      setForm({
+        name: data.name || "",
+        headline: data.headline || "",
+        bio: data.bio || "",
+        email: data.email || "",
+        location: data.location || "",
+        avatarUrl: data.avatarUrl || "",
+        githubUrl: data.githubUrl || "",
+        linkedinUrl: data.linkedinUrl || "",
+        portfolioUrl: data.portfolioUrl || "",
+        websiteUrl: data.websiteUrl || "",
+      });
+
+    } catch (e) {
+      console.error("Failed to load profile", e);
+    }
+  };
+
+  loadProfile();
+}, []);
   const handleSave = async () => {
     setLoading(true);
     setSuccess(false);

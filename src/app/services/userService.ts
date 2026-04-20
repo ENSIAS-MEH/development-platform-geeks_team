@@ -2,6 +2,10 @@ import api from '../lib/api'
 
 export const userService = {
 
+  updatePrivacy: async (data: { showEmail: boolean }) => {
+    await api.put('/api/users/me/privacy', data)
+},
+
   // Called by DashboardPage and MyProfilePage on load
   getMyProfile: async () => {
     const response = await api.get('/api/users/me')
