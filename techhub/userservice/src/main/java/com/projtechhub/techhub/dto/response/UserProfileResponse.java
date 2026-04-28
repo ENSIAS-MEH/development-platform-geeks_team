@@ -30,7 +30,8 @@ public class UserProfileResponse {
     private String linkedinUrl;
     private String websiteUrl;    // extra field not in base User — full profile only
     private String headline;      // extra field — "Full-stack dev | Open to collabs"
-
+    private Boolean showEmail;
+    private String authProvider;
     private List<String> skills;   // HERE you can use the rich object
     // because MyProfilePage will display level etc.
     // this is different from UserResponse.skills

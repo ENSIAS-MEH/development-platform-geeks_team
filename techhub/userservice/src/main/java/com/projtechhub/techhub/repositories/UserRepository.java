@@ -18,7 +18,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
      Optional<User> findByEmail(String email);
      Boolean existsByEmail(String email);
      Page<User> findByEnabledTrue(Pageable pageable);
-
      boolean getUserByEmailExists(String email);
 
      @Query("""
@@ -33,4 +32,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      );
 
      Optional<User> findById(UUID id);
+
+     @Query("SELECT u FROM User u WHERE u.email != :email")
+     Page<User> findAllExcept(@Param("email") String email, Pageable pageable);
 }
