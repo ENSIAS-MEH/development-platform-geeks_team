@@ -7,24 +7,17 @@ import com.projtechhub.techhub.dto.request.UpdateProfileRequest;
 import com.projtechhub.techhub.dto.response.UserProfileResponse;
 import com.projtechhub.techhub.dto.response.UserResponse;
 import com.projtechhub.techhub.dto.response.ChangePasswordResponse;
-import com.projtechhub.techhub.dto.response.UserSummaryDTO;
-import com.projtechhub.techhub.entities.User;
 import com.projtechhub.techhub.repositories.UserRepository;
 import com.projtechhub.techhub.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.Authenticator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -92,12 +85,16 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/findCollaborators")
-    public ResponseEntity<Page<UserSummaryDTO>> findCollaborators(Authentication authentication, @RequestParam(defaultValue = "0") int page,
-                                                                  @RequestParam(defaultValue = "10") int size) {
-        String userEmail = authentication.getName();
-        return ResponseEntity.ok(userService.getAllUsersExcept(userEmail, page, size));
+    // GET /api/users — returns all users for FindCollaboratorsPage initial load
+    @GetMapping
+    public ResponseEntity<Page<UserResponse>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size
+    ) {
+        return ResponseEntity.ok(userService.getAllUsers(page, size));
     }
+
+
 
 
 

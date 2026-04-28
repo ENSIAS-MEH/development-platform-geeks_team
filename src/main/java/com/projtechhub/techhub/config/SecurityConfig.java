@@ -6,6 +6,7 @@ import com.projtechhub.techhub.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -56,6 +57,9 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/actuator/health"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/search").permitAll()
                         .anyRequest().authenticated()
                 )
 

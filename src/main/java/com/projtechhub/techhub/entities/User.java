@@ -69,7 +69,7 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    @Column(name = "show_email", nullable = false)
+    @Column(name = "show_email")
     private Boolean showEmail = false;  // default hidden
     @Column(name = "auth_provider", length = 20)
     private String authProvider = "local";  // "local", "github", "google"

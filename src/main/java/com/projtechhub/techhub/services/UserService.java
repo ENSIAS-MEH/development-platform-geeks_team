@@ -7,7 +7,6 @@ import com.projtechhub.techhub.dto.request.UpdateProfileRequest;
 import com.projtechhub.techhub.dto.response.ChangePasswordResponse;
 import com.projtechhub.techhub.dto.response.UserProfileResponse;
 import com.projtechhub.techhub.dto.response.UserResponse;
-import com.projtechhub.techhub.dto.response.UserSummaryDTO;
 import com.projtechhub.techhub.entities.Skill;
 import com.projtechhub.techhub.entities.User;
 import com.projtechhub.techhub.entities.UserProfile;
@@ -17,7 +16,6 @@ import com.projtechhub.techhub.repositories.UserProfileRepository;
 import com.projtechhub.techhub.repositories.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -31,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -260,20 +257,29 @@ public class UserService {
     }
 
 
-    public Page<UserSummaryDTO> getAllUsersExcept(String userEmail, int page, int size) {
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllUsers(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return userRepository.findAllExcept(userEmail, pageable)
-                .map(this::mapToSummaryDTO); // Page has its own .map()
+        return userRepository.findByEnabledTrue(pageable)
+                .map(this::buildUserResponse);
     }
 
-    private UserSummaryDTO mapToSummaryDTO(User u) {
-        return UserSummaryDTO.builder()
-                .id(u.getId())
-                .name(u.getDisplayName())
-                .userType(String.valueOf(u.getUserType()))
-                .bio(u.getBio())
-                .location(u.getLocation())
-                .skills(u.getSkills())
-                .build();
-    }
+
+//    public Page<UserSummaryDTO> getAllUsersExcept(String userEmail, int page, int size) {
+//        Pageable pageable = PageRequest.of(page, size);
+//        return userRepository.findAllExcept(userEmail, pageable)
+//                .map(this::mapToSummaryDTO); // Page has its own .map()
+//    }
+//
+//    private UserSummaryDTO mapToSummaryDTO(User u) {
+//        return UserSummaryDTO.builder()
+//                .id(u.getId())
+//                .name(u.getDisplayName())
+//                .userType(String.valueOf(u.getUserType()))
+//                .bio(u.getBio())
+//                .location(u.getLocation())
+//                .skills(u.getSkills())
+//                .email(Boolean.TRUE.equals(u.getShowEmail())? u.getEmail() : null)
+//                .build();
+//    }
 }
