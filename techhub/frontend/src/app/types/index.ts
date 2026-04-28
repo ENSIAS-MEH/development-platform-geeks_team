@@ -1,6 +1,17 @@
 // TypeScript type definitions for TechHub platform
 
 // Event Types
+
+export type UserSummaryDTO = {
+  id: number;
+  name: string;
+  userType: string;
+  bio: string;
+  location: string;
+  skills: string[];
+  email?: string | null;
+};
+
 export interface Event {
   id: string;
   title: string;

@@ -56,7 +56,7 @@ export  function MyProfilePage() {
     ? userInfo.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
-  const skills =userInfo.skills;
+  const skills =(userInfo.skills || []);
   
   const projects = [
     {
