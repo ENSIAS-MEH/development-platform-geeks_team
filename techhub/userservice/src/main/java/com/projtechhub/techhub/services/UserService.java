@@ -1,6 +1,7 @@
 package com.projtechhub.techhub.services;
 
 import com.projtechhub.techhub.dto.request.ChangePasswordRequest;
+import com.projtechhub.techhub.dto.request.PrivacyRequest;
 import com.projtechhub.techhub.dto.request.SkillRequest;
 import com.projtechhub.techhub.dto.request.UpdateProfileRequest;
 import com.projtechhub.techhub.dto.response.ChangePasswordResponse;
@@ -169,7 +170,7 @@ public class UserService {
         return UserResponse.builder()
                 .id(user.getId().toString())
                 .name(user.getDisplayName())
-                .email(user.getEmail())
+                .email(user.getShowEmail() != null && user.getShowEmail()? user.getEmail() : null)
                 .role(mapUserType(user.getUserType()))
                 .skills(skillNames)
                 .location(user.getLocation())
@@ -184,7 +185,7 @@ public class UserService {
     private UserProfileResponse buildUserProfileResponse(User user, UserProfile profile) {
         // Same as UserResponse but with extra profile fields
         // skills still List<String> — consistent with everywhere else
-        List<String> skillNames = user.getSkills() != null
+        List<String> skillNames = (user.getSkills() != null && !user.getSkills().isEmpty())
                 ? user.getSkills().stream().map(Skill::getName).toList()
                 : List.of();
 
@@ -192,6 +193,9 @@ public class UserService {
                 .id(user.getId().toString())
                 .name(user.getDisplayName())
                 .email(user.getEmail())
+                .showEmail(user.getShowEmail() != null ? user.getShowEmail() : false)  // include the setting so frontend can display the toggle state
+                .authProvider(user.getAuthProvider() != null ? user.getAuthProvider() : "local")
+
                 .role(mapUserType(user.getUserType()))
                 .bio(user.getBio())
                 .avatarUrl(user.getAvatarUrl())
@@ -244,4 +248,38 @@ public class UserService {
                 .build();
     }
 
+    public void updatePrivacy(PrivacyRequest request) {
+        User user = getCurrentUser();
+        if (request.getShowEmail() != null) {
+            user.setShowEmail(request.getShowEmail());
+        }
+        userRepository.save(user);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return userRepository.findByEnabledTrue(pageable)
+                .map(this::buildUserResponse);
+    }
+
+
+//    public Page<UserSummaryDTO> getAllUsersExcept(String userEmail, int page, int size) {
+//        Pageable pageable = PageRequest.of(page, size);
+//        return userRepository.findAllExcept(userEmail, pageable)
+//                .map(this::mapToSummaryDTO); // Page has its own .map()
+//    }
+//
+//    private UserSummaryDTO mapToSummaryDTO(User u) {
+//        return UserSummaryDTO.builder()
+//                .id(u.getId())
+//                .name(u.getDisplayName())
+//                .userType(String.valueOf(u.getUserType()))
+//                .bio(u.getBio())
+//                .location(u.getLocation())
+//                .skills(u.getSkills())
+//                .email(Boolean.TRUE.equals(u.getShowEmail())? u.getEmail() : null)
+//                .build();
+//    }
 }
