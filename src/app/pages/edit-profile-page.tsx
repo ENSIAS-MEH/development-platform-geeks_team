@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, KeyboardEvent } from "react";
 import { useNavigate } from "react-router";
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { userService } from "../services/userService";
-import { ArrowLeft, User, Globe, Link2 } from "lucide-react";
+import { ArrowLeft, User, Globe, Link2, X, Code } from "lucide-react";
 
 export function EditProfilePage() {
   const navigate = useNavigate();
@@ -22,6 +22,8 @@ export function EditProfilePage() {
     websiteUrl: "",
   });
 
+  const [skills, setSkills] = useState<string[]>([]);
+  const [skillInput, setSkillInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -29,36 +31,74 @@ export function EditProfilePage() {
     const { id, value } = e.target;
     setForm((prev) => ({ ...prev, [id]: value }));
   };
+
   useEffect(() => {
-  const loadProfile = async () => {
+    const loadProfile = async () => {
+      try {
+        const data = await userService.getMyProfile();
+        setForm({
+          name: data.name || "",
+          headline: data.headline || "",
+          bio: data.bio || "",
+          email: data.email || "",
+          location: data.location || "",
+          avatarUrl: data.avatarUrl || "",
+          githubUrl: data.githubUrl || "",
+          linkedinUrl: data.linkedinUrl || "",
+          portfolioUrl: data.portfolioUrl || "",
+          websiteUrl: data.websiteUrl || "",
+        });
+        setSkills(data.skills || []);
+      } catch (e) {
+        console.error("Failed to load profile", e);
+      }
+    };
+    loadProfile();
+  }, []);
+
+  // --- Skill handlers — each one hits the backend immediately ---
+
+  const addSkill = async () => {
+    const trimmed = skillInput.trim().replace(/,$/, "");
+    if (!trimmed || skills.includes(trimmed)) {
+      setSkillInput("");
+      return;
+    }
     try {
-      const data = await userService.getMyProfile();
-
-      setForm({
-        name: data.name || "",
-        headline: data.headline || "",
-        bio: data.bio || "",
-        email: data.email || "",
-        location: data.location || "",
-        avatarUrl: data.avatarUrl || "",
-        githubUrl: data.githubUrl || "",
-        linkedinUrl: data.linkedinUrl || "",
-        portfolioUrl: data.portfolioUrl || "",
-        websiteUrl: data.websiteUrl || "",
-      });
-
+      const updated = await userService.addSkill(trimmed);
+      setSkills(updated);
     } catch (e) {
-      console.error("Failed to load profile", e);
+      console.error("Failed to add skill", e);
+    }
+    setSkillInput("");
+  };
+
+  const removeSkill = async (skill: string) => {
+    try {
+      const updated = await userService.deleteSkillByName(skill);
+      setSkills(updated);
+    } catch (e) {
+      console.error("Failed to remove skill", e);
     }
   };
 
-  loadProfile();
-}, []);
+  const handleSkillKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addSkill();
+    }
+    if (e.key === "Backspace" && skillInput === "" && skills.length > 0) {
+      removeSkill(skills[skills.length - 1]);
+    }
+  };
+
+  // --- Save — skills excluded, managed independently ---
+
   const handleSave = async () => {
     setLoading(true);
     setSuccess(false);
     try {
-      await userService.updateMyProfile(form);
+      await userService.updateMyProfile({ ...form });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (e) {
@@ -83,6 +123,7 @@ export function EditProfilePage() {
       </div>
 
       <div className="space-y-6">
+
         {/* Basic Info */}
         <div className="bg-white rounded-xl p-6 border border-[#BAC7CC]/30">
           <div className="flex items-center gap-2 mb-5">
@@ -166,6 +207,53 @@ export function EditProfilePage() {
           </div>
         </div>
 
+        {/* Skills */}
+        <div className="bg-white rounded-xl p-6 border border-[#BAC7CC]/30">
+          <div className="flex items-center gap-2 mb-5">
+            <Code size={18} className="text-[#56B2BB]" />
+            <h3 className="font-bold text-[#1D2233]">Skills</h3>
+          </div>
+
+          <div
+            className="flex flex-wrap gap-2 min-h-[44px] w-full rounded-md border border-input bg-[#F0F4F8] px-3 py-2 cursor-text"
+            onClick={() => document.getElementById("skill-input")?.focus()}
+          >
+            {skills.map((skill) => (
+              <span
+                key={skill}
+                className="flex items-center gap-1 bg-[#56B2BB]/15 text-[#2a8a93] text-sm font-medium px-2.5 py-0.5 rounded-full"
+              >
+                {skill}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); removeSkill(skill); }}
+                  className="hover:text-[#1D2233] transition-colors ml-0.5"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+            <input
+              id="skill-input"
+              value={skillInput}
+              onChange={(e) => setSkillInput(e.target.value)}
+              onKeyDown={handleSkillKeyDown}
+              onBlur={addSkill}
+              placeholder={skills.length === 0 ? "Type a skill and press Enter..." : ""}
+              className="flex-1 min-w-[160px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          <p className="text-xs text-[#717182] mt-1.5">
+            Press{" "}
+            <kbd className="px-1 py-0.5 rounded bg-[#E8EEF2] text-xs font-mono">Enter</kbd>
+            {" "}or{" "}
+            <kbd className="px-1 py-0.5 rounded bg-[#E8EEF2] text-xs font-mono">,</kbd>
+            {" "}to add ·{" "}
+            <kbd className="px-1 py-0.5 rounded bg-[#E8EEF2] text-xs font-mono">Backspace</kbd>
+            {" "}to remove last
+          </p>
+        </div>
+
         {/* Social Links */}
         <div className="bg-white rounded-xl p-6 border border-[#BAC7CC]/30">
           <div className="flex items-center gap-2 mb-5">
@@ -217,6 +305,7 @@ export function EditProfilePage() {
             </span>
           )}
         </div>
+
       </div>
     </div>
   );

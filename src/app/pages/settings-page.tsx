@@ -13,6 +13,8 @@ export function SettingsPage() {
     password: "",
     confirmedPassword: "",
   });
+  const [passwordError, setPasswordError] = useState("")
+  const [passwordSuccess, setPasswordSuccess] = useState("")
 
   const [showEmail, setShowEmail] = useState(false)
   const [authProvider, setAuthProvider] = useState('local')
@@ -39,23 +41,29 @@ export function SettingsPage() {
   };
 
   const handleChangePassword = async () => {
-    if (form.password !== form.confirmedPassword) {
-      alert("New passwords do not match");
-      return;
-    }
-    try {
-      await userService.changePassword({
-        currentPassword: form.currentPassword,
-        newPassword: form.password,
-        confirmPassword: form.confirmedPassword,
-      });
-      alert("Password updated successfully");
-      setForm({ currentPassword: "", password: "", confirmedPassword: "" });
-    } catch (e) {
-      console.error(e);
-      alert("Error changing password");
-    }
-  };
+    setPasswordError("")
+    setPasswordSuccess("")
+
+  if (form.password.length < 8) {
+    setPasswordError("New password must be at least 8 characters")
+    return
+  }
+  if (form.password !== form.confirmedPassword) {
+    setPasswordError("New passwords do not match")
+    return
+  }
+  try {
+    await userService.changePassword({
+      currentPassword: form.currentPassword,
+      newPassword: form.password,
+      confirmPassword: form.confirmedPassword,
+    })
+    setPasswordSuccess("Password updated successfully")
+    setForm({ currentPassword: "", password: "", confirmedPassword: "" })
+  } catch (e: any) {
+    setPasswordError(e.response?.data?.message || "Error changing password")
+  }
+}
 
   return (
     <div className="p-8">
@@ -112,6 +120,8 @@ export function SettingsPage() {
                     className="mt-1.5 bg-[#F0F4F8]"
                   />
                 </div>
+                {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
+                {passwordSuccess && <p className="text-sm text-green-600">{passwordSuccess}</p>}
                 <Button
                   onClick={handleChangePassword}
                   className="bg-[#56B2BB] hover:bg-[#56B2BB]/90"

@@ -6,6 +6,12 @@ export const userService = {
     await api.put('/api/users/me/privacy', data)
 },
 
+  getAllUsers: async (page = 0, size = 9) => {
+    const response = await api.get('/api/users', { params: { page, size } })
+    return response.data  // Page<UserResponse> — has .content, .totalPages
+},
+
+
   // Called by DashboardPage and MyProfilePage on load
   getMyProfile: async () => {
     const response = await api.get('/api/users/me')
@@ -18,6 +24,7 @@ export const userService = {
     name?: string
     email?: string
     bio?: string
+    skills?: string[]
     location?: string
     avatarUrl?: string
     headline?: string

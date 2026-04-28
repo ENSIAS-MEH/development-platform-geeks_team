@@ -30,6 +30,8 @@ import { CreateEventPage } from "./pages/create-event-page";
 import { ManageParticipantsPage } from "./pages/manage-participants-page";
 import { TeamFormationPage } from "./pages/team-formation-page";
 import { EventAnalyticsPage } from "./pages/event-analytics-page";
+import { PublicProfilePage } from "./pages/PublicProfilePage";
+
 
 export const router = createBrowserRouter([
   {
@@ -45,7 +47,8 @@ export const router = createBrowserRouter([
       { path: "projects/:id", Component: ProjectDetailPage },
       // auth fallback
       { path: "auth/callback", Component: AuthCallBack },
-
+      
+      { path: "users/:id", Component: PublicProfilePage },
       // Auth
       {
         path: "auth",
