@@ -1,0 +1,36 @@
+# Infrastructure for user-service (local dev).
+#
+# You may ALREADY have these running from another compose stack:
+#   - postgres-user  → localhost:5432 (user_db)
+#   - community-redis → localhost:6379
+# If so, skip "docker compose up" and go straight to mvn spring-boot:run.
+#
+# Start fresh (only if nothing is on 5432/6379):
+#   docker compose up -d
+
+services:
+  postgres-user:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - user_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d user_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Optional: only if port 6379 is free (community-redis often uses it already)
+  redis:
+    image: redis:7-alpine
+    profiles: ["with-redis"]
+    ports:
+      - "6379:6379"
+
+volumes:
+  user_postgres_data:

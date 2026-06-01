@@ -1,5 +1,6 @@
 package com.devconnect.eventservice.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.*;
 import org.springframework.data.redis.cache.*;
@@ -25,6 +26,7 @@ public class RedisConfig {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
     public CacheManager cacheManager(RedisConnectionFactory factory) {
         Map<String, RedisCacheConfiguration> configs = new HashMap<>();
         configs.put("events", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)));

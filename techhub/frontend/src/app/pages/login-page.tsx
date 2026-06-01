@@ -34,10 +34,15 @@ export function LoginPage() {
       await authService.login({ email: loginEmail, password: loginPassword })
       navigate("/dashboard")    // redirect on success
     } catch (error: any) {
-      // Show the message from your ErrorResponse DTO
-      setLoginError(
-        error.response?.data?.message || "Invalid email or password"
-      )
+      if (!error.response) {
+        setLoginError(
+          "Cannot reach the server. Start user-service on port 8080, then restart the frontend dev server."
+        )
+      } else {
+        setLoginError(
+          error.response?.data?.message || "Invalid email or password"
+        )
+      }
     } finally {
       setLoginLoading(false)
     }
@@ -53,9 +58,15 @@ export function LoginPage() {
       await authService.register({ name, email: registerEmail, password: registerPassword, role })
       navigate("/dashboard")
     } catch (error: any) {
-      setRegisterError(
-        error.response?.data?.message || "Registration failed. Please try again."
-      )
+      if (!error.response) {
+        setRegisterError(
+          "Cannot reach the server. Start user-service on port 8080, then restart the frontend dev server."
+        )
+      } else {
+        setRegisterError(
+          error.response?.data?.message || "Registration failed. Please try again."
+        )
+      }
     } finally {
       setRegisterLoading(false)
     }

@@ -51,6 +51,7 @@ public class EventController {
     public ResponseEntity<Page<EventResponse>> searchEvents(
             @Parameter(description = "Filter by event type") @RequestParam(required = false) EventType type,
             @Parameter(description = "Filter by event status") @RequestParam(required = false) EventStatus status,
+            @Parameter(description = "Filter by organizer UUID") @RequestParam(required = false) UUID organizerId,
             @Parameter(description = "Search keyword in title") @RequestParam(required = false) String keyword,
             @Parameter(description = "Start date lower bound (ISO 8601)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateFrom,
             @Parameter(description = "Start date upper bound (ISO 8601)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTo,
@@ -58,7 +59,7 @@ public class EventController {
             @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
             @RequestHeader(value = "X-User-Id", required = false) UUID userId) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").ascending());
-        return ResponseEntity.ok(eventService.searchEvents(type, status, keyword, dateFrom, dateTo, pageable));
+        return ResponseEntity.ok(eventService.searchEvents(type, status, organizerId, keyword, dateFrom, dateTo, userId, pageable));
     }
 
     @GetMapping("/{id}")

@@ -221,7 +221,7 @@ public class AuthService {
         return switch (role) {
             case "Student"         -> UserType.STUDENT;
             case "Developer"       -> UserType.DEVELOPER;
-            case "Organizer"       -> UserType.ORGANIZER;
+            case "Event Organizer", "Organizer" -> UserType.ORGANIZER;
             case "Company"         -> UserType.COMPANY;
             default                -> UserType.DEVELOPER; // safe fallback
         };
@@ -256,7 +256,7 @@ public class AuthService {
         return switch (userType) {
             case STUDENT   -> "Student";
             case DEVELOPER -> "Developer";
-            case ORGANIZER -> "Organizer";
+            case ORGANIZER -> "Event Organizer";
             case COMPANY   -> "Company";
         };
     }

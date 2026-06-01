@@ -44,7 +44,8 @@ class EventServiceTest {
     void registerForEvent_whenEventFull_throwsException() {
         Event event = publishedEvent(2);
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-        when(registrationRepository.existsByEventIdAndUserId(eventId, userId)).thenReturn(false);
+        when(registrationRepository.existsByEventIdAndUserIdAndStatus(
+            eventId, userId, RegistrationStatus.CONFIRMED)).thenReturn(false);
         when(registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED)).thenReturn(2L);
 
         assertThatThrownBy(() -> eventService.registerForEvent(eventId, userId))
@@ -55,7 +56,8 @@ class EventServiceTest {
     void registerForEvent_whenAlreadyRegistered_throwsException() {
         Event event = publishedEvent(null);
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-        when(registrationRepository.existsByEventIdAndUserId(eventId, userId)).thenReturn(true);
+        when(registrationRepository.existsByEventIdAndUserIdAndStatus(
+            eventId, userId, RegistrationStatus.CONFIRMED)).thenReturn(true);
 
         assertThatThrownBy(() -> eventService.registerForEvent(eventId, userId))
             .isInstanceOf(AlreadyRegisteredException.class);
@@ -84,7 +86,8 @@ class EventServiceTest {
 
     @Test
     void cancelRegistration_whenNotRegistered_throwsException() {
-        when(registrationRepository.findByEventIdAndUserId(eventId, userId)).thenReturn(Optional.empty());
+        when(registrationRepository.findByEventIdAndUserIdAndStatus(
+            eventId, userId, RegistrationStatus.CONFIRMED)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> eventService.cancelRegistration(eventId, userId))
             .isInstanceOf(RegistrationNotFoundException.class);
@@ -160,7 +163,9 @@ class EventServiceTest {
     void registerForEvent_noMaxParticipants_allowsRegistration() {
         Event event = publishedEvent(null);
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-        when(registrationRepository.existsByEventIdAndUserId(eventId, userId)).thenReturn(false);
+        when(registrationRepository.existsByEventIdAndUserIdAndStatus(
+            eventId, userId, RegistrationStatus.CONFIRMED)).thenReturn(false);
+        when(registrationRepository.findByEventIdAndUserId(eventId, userId)).thenReturn(Optional.empty());
         Registration saved = Registration.builder()
             .id(UUID.randomUUID())
             .eventId(eventId)

@@ -23,7 +23,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping(&quot;/api/events&quot;)
-<span class="nc" id="L26">@RequiredArgsConstructor</span>
+@RequiredArgsConstructor
 @Tag(name = &quot;Events&quot;, description = &quot;Event management: create, publish, register, search&quot;)
 public class EventController {
 
@@ -51,14 +51,15 @@ public class EventController {
     public ResponseEntity&lt;Page&lt;EventResponse&gt;&gt; searchEvents(
             @Parameter(description = &quot;Filter by event type&quot;) @RequestParam(required = false) EventType type,
             @Parameter(description = &quot;Filter by event status&quot;) @RequestParam(required = false) EventStatus status,
+            @Parameter(description = &quot;Filter by organizer UUID&quot;) @RequestParam(required = false) UUID organizerId,
             @Parameter(description = &quot;Search keyword in title&quot;) @RequestParam(required = false) String keyword,
             @Parameter(description = &quot;Start date lower bound (ISO 8601)&quot;) @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateFrom,
             @Parameter(description = &quot;Start date upper bound (ISO 8601)&quot;) @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTo,
             @Parameter(description = &quot;Page number (0-based)&quot;) @RequestParam(defaultValue = &quot;0&quot;) int page,
             @Parameter(description = &quot;Page size&quot;) @RequestParam(defaultValue = &quot;10&quot;) int size,
             @RequestHeader(value = &quot;X-User-Id&quot;, required = false) UUID userId) {
-<span class="nc" id="L60">        Pageable pageable = PageRequest.of(page, size, Sort.by(&quot;startDate&quot;).ascending());</span>
-<span class="nc" id="L61">        return ResponseEntity.ok(eventService.searchEvents(type, status, keyword, dateFrom, dateTo, pageable));</span>
+<span class="nc" id="L61">        Pageable pageable = PageRequest.of(page, size, Sort.by(&quot;startDate&quot;).ascending());</span>
+<span class="nc" id="L62">        return ResponseEntity.ok(eventService.searchEvents(type, status, organizerId, keyword, dateFrom, dateTo, userId, pageable));</span>
     }
 
     @GetMapping(&quot;/{id}&quot;)
@@ -68,7 +69,7 @@ public class EventController {
     public ResponseEntity&lt;EventResponse&gt; getEvent(
             @PathVariable UUID id,
             @RequestHeader(value = &quot;X-User-Id&quot;, required = false) UUID userId) {
-<span class="nc" id="L71">        return ResponseEntity.ok(eventService.getEventById(id, userId));</span>
+<span class="nc" id="L72">        return ResponseEntity.ok(eventService.getEventById(id, userId));</span>
     }
 
     @PutMapping(&quot;/{id}&quot;)
@@ -80,7 +81,7 @@ public class EventController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateEventRequest request,
             @RequestHeader(&quot;X-User-Id&quot;) UUID userId) {
-<span class="nc" id="L83">        return ResponseEntity.ok(eventService.updateEvent(id, request, userId));</span>
+<span class="nc" id="L84">        return ResponseEntity.ok(eventService.updateEvent(id, request, userId));</span>
     }
 
     @DeleteMapping(&quot;/{id}&quot;)
@@ -91,8 +92,8 @@ public class EventController {
     public ResponseEntity&lt;Void&gt; deleteEvent(
             @PathVariable UUID id,
             @RequestHeader(&quot;X-User-Id&quot;) UUID userId) {
-<span class="nc" id="L94">        eventService.deleteEvent(id, userId);</span>
-<span class="nc" id="L95">        return ResponseEntity.noContent().build();</span>
+<span class="nc" id="L95">        eventService.deleteEvent(id, userId);</span>
+<span class="nc" id="L96">        return ResponseEntity.noContent().build();</span>
     }
 
     @PostMapping(&quot;/{id}/publish&quot;)
@@ -103,7 +104,7 @@ public class EventController {
     public ResponseEntity&lt;EventResponse&gt; publishEvent(
             @PathVariable UUID id,
             @RequestHeader(&quot;X-User-Id&quot;) UUID userId) {
-<span class="nc" id="L106">        return ResponseEntity.ok(eventService.publishEvent(id, userId));</span>
+<span class="nc" id="L107">        return ResponseEntity.ok(eventService.publishEvent(id, userId));</span>
     }
 
     @PostMapping(&quot;/{id}/register&quot;)
@@ -115,7 +116,7 @@ public class EventController {
     public ResponseEntity&lt;RegistrationResponse&gt; register(
             @PathVariable UUID id,
             @RequestHeader(&quot;X-User-Id&quot;) UUID userId) {
-<span class="nc" id="L118">        return ResponseEntity.status(HttpStatus.CREATED).body(eventService.registerForEvent(id, userId));</span>
+<span class="nc" id="L119">        return ResponseEntity.status(HttpStatus.CREATED).body(eventService.registerForEvent(id, userId));</span>
     }
 
     @DeleteMapping(&quot;/{id}/register&quot;)
@@ -125,8 +126,8 @@ public class EventController {
     public ResponseEntity&lt;Void&gt; cancelRegistration(
             @PathVariable UUID id,
             @RequestHeader(&quot;X-User-Id&quot;) UUID userId) {
-<span class="nc" id="L128">        eventService.cancelRegistration(id, userId);</span>
-<span class="nc" id="L129">        return ResponseEntity.noContent().build();</span>
+<span class="nc" id="L129">        eventService.cancelRegistration(id, userId);</span>
+<span class="nc" id="L130">        return ResponseEntity.noContent().build();</span>
     }
 
     @GetMapping(&quot;/{id}/participants&quot;)
@@ -137,7 +138,7 @@ public class EventController {
             @PathVariable UUID id,
             @Parameter(description = &quot;Page number (0-based)&quot;) @RequestParam(defaultValue = &quot;0&quot;) int page,
             @Parameter(description = &quot;Page size&quot;) @RequestParam(defaultValue = &quot;20&quot;) int size) {
-<span class="nc" id="L140">        return ResponseEntity.ok(eventService.getParticipants(id, PageRequest.of(page, size)));</span>
+<span class="nc" id="L141">        return ResponseEntity.ok(eventService.getParticipants(id, PageRequest.of(page, size)));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
