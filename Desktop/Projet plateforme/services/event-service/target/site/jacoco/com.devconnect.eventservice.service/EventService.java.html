@@ -6,15 +6,18 @@ import com.devconnect.eventservice.enums.*;
 import com.devconnect.eventservice.exception.*;
 import com.devconnect.eventservice.kafka.EventProducer;
 import com.devconnect.eventservice.kafka.event.*;
-import com.devconnect.eventservice.repository.*;
+import com.devconnect.eventservice.repository.EventRepository;
+import com.devconnect.eventservice.repository.EventSpecifications;
+import com.devconnect.eventservice.repository.RegistrationRepository;
+import org.springframework.data.jpa.domain.Specification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.*;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -22,9 +25,8 @@ import java.util.UUID;
  * Handles date validation, capacity checks, ownership enforcement, caching, and Kafka publishing.
  */
 @Service
-<span class="fc" id="L25">@RequiredArgsConstructor</span>
-<span class="fc" id="L26">@Slf4j</span>
-@CacheConfig(cacheNames = &quot;events&quot;)
+@RequiredArgsConstructor
+<span class="fc" id="L29">@Slf4j</span>
 public class EventService {
 
     private final EventRepository eventRepository;
@@ -40,37 +42,36 @@ public class EventService {
      * @throws InvalidEventDatesException if endDate is not after startDate
      */
     @Transactional
-    @CacheEvict(cacheNames = &quot;event-list&quot;, allEntries = true)
     public EventResponse createEvent(CreateEventRequest request, UUID organizerId) {
-<span class="pc bpc" id="L45" title="2 of 4 branches missed.">        if (request.getEndDate() != null &amp;&amp; request.getStartDate() != null</span>
-<span class="fc bfc" id="L46" title="All 2 branches covered.">            &amp;&amp; !request.getEndDate().isAfter(request.getStartDate())) {</span>
-<span class="fc" id="L47">            throw new InvalidEventDatesException();</span>
+<span class="pc bpc" id="L46" title="2 of 4 branches missed.">        if (request.getEndDate() != null &amp;&amp; request.getStartDate() != null</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            &amp;&amp; !request.getEndDate().isAfter(request.getStartDate())) {</span>
+<span class="fc" id="L48">            throw new InvalidEventDatesException();</span>
         }
 
-<span class="fc" id="L50">        Event event = Event.builder()</span>
-<span class="fc" id="L51">            .title(request.getTitle())</span>
-<span class="fc" id="L52">            .description(request.getDescription())</span>
-<span class="fc" id="L53">            .type(request.getType())</span>
-<span class="fc" id="L54">            .startDate(request.getStartDate())</span>
-<span class="fc" id="L55">            .endDate(request.getEndDate())</span>
-<span class="fc" id="L56">            .location(request.getLocation())</span>
-<span class="fc" id="L57">            .maxParticipants(request.getMaxParticipants())</span>
-<span class="fc" id="L58">            .organizerId(organizerId)</span>
-<span class="fc" id="L59">            .status(EventStatus.DRAFT)</span>
-<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            .tags(request.getTags() != null ? request.getTags() : new java.util.HashSet&lt;&gt;())</span>
-<span class="fc" id="L61">            .build();</span>
+<span class="fc" id="L51">        Event event = Event.builder()</span>
+<span class="fc" id="L52">            .title(request.getTitle())</span>
+<span class="fc" id="L53">            .description(request.getDescription())</span>
+<span class="fc" id="L54">            .type(request.getType())</span>
+<span class="fc" id="L55">            .startDate(request.getStartDate())</span>
+<span class="fc" id="L56">            .endDate(request.getEndDate())</span>
+<span class="fc" id="L57">            .location(request.getLocation())</span>
+<span class="fc" id="L58">            .maxParticipants(request.getMaxParticipants())</span>
+<span class="fc" id="L59">            .organizerId(organizerId)</span>
+<span class="fc" id="L60">            .status(EventStatus.DRAFT)</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">            .tags(request.getTags() != null ? request.getTags() : new java.util.HashSet&lt;&gt;())</span>
+<span class="fc" id="L62">            .build();</span>
 
-<span class="fc" id="L63">        Event saved = eventRepository.save(event);</span>
+<span class="fc" id="L64">        Event saved = eventRepository.save(event);</span>
 
-<span class="fc" id="L65">        eventProducer.publishEventCreated(EventCreatedEvent.builder()</span>
-<span class="fc" id="L66">            .id(saved.getId())</span>
-<span class="fc" id="L67">            .title(saved.getTitle())</span>
-<span class="fc" id="L68">            .organizerId(saved.getOrganizerId())</span>
-<span class="fc" id="L69">            .type(saved.getType().name())</span>
-<span class="fc" id="L70">            .startDate(saved.getStartDate())</span>
-<span class="fc" id="L71">            .build());</span>
+<span class="fc" id="L66">        eventProducer.publishEventCreated(EventCreatedEvent.builder()</span>
+<span class="fc" id="L67">            .id(saved.getId())</span>
+<span class="fc" id="L68">            .title(saved.getTitle())</span>
+<span class="fc" id="L69">            .organizerId(saved.getOrganizerId())</span>
+<span class="fc" id="L70">            .type(saved.getType().name())</span>
+<span class="fc" id="L71">            .startDate(saved.getStartDate())</span>
+<span class="fc" id="L72">            .build());</span>
 
-<span class="fc" id="L73">        return toResponse(saved, 0, false);</span>
+<span class="fc" id="L74">        return toResponse(saved, 0, false);</span>
     }
 
     /**
@@ -83,7 +84,6 @@ public class EventService {
      * @throws UnauthorizedActionException if the requester is not the organizer
      */
     @Transactional
-    @CacheEvict(value = &quot;events&quot;, key = &quot;#eventId&quot;)
     public EventResponse publishEvent(UUID eventId, UUID requesterId) {
 <span class="fc" id="L88">        Event event = findByIdOrThrow(eventId);</span>
 <span class="fc bfc" id="L89" title="All 2 branches covered.">        if (!event.getOrganizerId().equals(requesterId)) {</span>
@@ -110,12 +110,11 @@ public class EventService {
      * @return the event response
      * @throws EventNotFoundException if not found
      */
-    @Cacheable(key = &quot;#eventId&quot;)
     public EventResponse getEventById(UUID eventId, UUID currentUserId) {
-<span class="nc" id="L115">        Event event = findByIdOrThrow(eventId);</span>
-<span class="nc" id="L116">        long count = registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED);</span>
-<span class="nc bnc" id="L117" title="All 4 branches missed.">        boolean registered = currentUserId != null &amp;&amp; registrationRepository.existsByEventIdAndUserId(eventId, currentUserId);</span>
-<span class="nc" id="L118">        return toResponse(event, count, registered);</span>
+<span class="nc" id="L114">        Event event = findByIdOrThrow(eventId);</span>
+<span class="nc" id="L115">        long count = registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED);</span>
+<span class="nc" id="L116">        boolean registered = isUserConfirmed(eventId, currentUserId);</span>
+<span class="nc" id="L117">        return toResponse(event, count, registered);</span>
     }
 
     /**
@@ -129,13 +128,23 @@ public class EventService {
      * @param pageable pagination parameters
      * @return paginated event responses
      */
-    @Cacheable(cacheNames = &quot;event-list&quot;, key = &quot;#type + '_' + #status + '_' + #keyword + '_' + #pageable.pageNumber&quot;)
-    public Page&lt;EventResponse&gt; searchEvents(EventType type, EventStatus status, String keyword,
-                                            LocalDateTime dateFrom, LocalDateTime dateTo, Pageable pageable) {
-<span class="nc" id="L135">        return eventRepository.searchEvents(type, status, keyword, dateFrom, dateTo, pageable)</span>
-<span class="nc" id="L136">            .map(event -&gt; {</span>
-<span class="nc" id="L137">                long count = registrationRepository.countByEventIdAndStatus(event.getId(), RegistrationStatus.CONFIRMED);</span>
-<span class="nc" id="L138">                return toResponse(event, count, false);</span>
+    public Page&lt;EventResponse&gt; searchEvents(EventType type, EventStatus status, UUID organizerId,
+                                            String keyword, LocalDateTime dateFrom, LocalDateTime dateTo,
+                                            UUID currentUserId, Pageable pageable) {
+<span class="nc bnc" id="L134" title="All 4 branches missed.">        String normalizedKeyword = (keyword == null || keyword.isBlank()) ? null : keyword.trim();</span>
+<span class="nc" id="L135">        Specification&lt;com.devconnect.eventservice.entity.Event&gt; spec = Specification</span>
+<span class="nc" id="L136">            .where(EventSpecifications.withType(type))</span>
+<span class="nc" id="L137">            .and(EventSpecifications.withStatus(status))</span>
+<span class="nc" id="L138">            .and(EventSpecifications.withOrganizerId(organizerId))</span>
+<span class="nc" id="L139">            .and(EventSpecifications.withKeyword(normalizedKeyword))</span>
+<span class="nc" id="L140">            .and(EventSpecifications.withStartDateFrom(dateFrom))</span>
+<span class="nc" id="L141">            .and(EventSpecifications.withStartDateTo(dateTo));</span>
+
+<span class="nc" id="L143">        return eventRepository.findAll(spec, pageable)</span>
+<span class="nc" id="L144">            .map(event -&gt; {</span>
+<span class="nc" id="L145">                long count = registrationRepository.countByEventIdAndStatus(event.getId(), RegistrationStatus.CONFIRMED);</span>
+<span class="nc" id="L146">                boolean registered = isUserConfirmed(event.getId(), currentUserId);</span>
+<span class="nc" id="L147">                return toResponse(event, count, registered);</span>
             });
     }
 
@@ -153,39 +162,46 @@ public class EventService {
      * @throws EventFullException if the event has reached its participant limit
      */
     @Transactional
-    @CacheEvict(value = &quot;events&quot;, key = &quot;#eventId&quot;)
     public RegistrationResponse registerForEvent(UUID eventId, UUID userId) {
-<span class="fc" id="L158">        Event event = findByIdOrThrow(eventId);</span>
+<span class="fc" id="L166">        Event event = findByIdOrThrow(eventId);</span>
 
-<span class="fc bfc" id="L160" title="All 2 branches covered.">        if (event.getStatus() != EventStatus.PUBLISHED) {</span>
-<span class="fc" id="L161">            throw new EventNotPublishedException(eventId);</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        if (event.getStatus() != EventStatus.PUBLISHED) {</span>
+<span class="fc" id="L169">            throw new EventNotPublishedException(eventId);</span>
         }
-<span class="fc bfc" id="L163" title="All 2 branches covered.">        if (registrationRepository.existsByEventIdAndUserId(eventId, userId)) {</span>
-<span class="fc" id="L164">            throw new AlreadyRegisteredException(eventId, userId);</span>
+<span class="fc" id="L171">        if (registrationRepository.existsByEventIdAndUserIdAndStatus(</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">            eventId, userId, RegistrationStatus.CONFIRMED)) {</span>
+<span class="fc" id="L173">            throw new AlreadyRegisteredException(eventId, userId);</span>
         }
-<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (event.getMaxParticipants() != null) {</span>
-<span class="fc" id="L167">            long confirmed = registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED);</span>
-<span class="pc bpc" id="L168" title="1 of 2 branches missed.">            if (confirmed &gt;= event.getMaxParticipants()) {</span>
-<span class="fc" id="L169">                throw new EventFullException(eventId);</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (event.getMaxParticipants() != null) {</span>
+<span class="fc" id="L176">            long confirmed = registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED);</span>
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">            if (confirmed &gt;= event.getMaxParticipants()) {</span>
+<span class="fc" id="L178">                throw new EventFullException(eventId);</span>
             }
         }
 
-<span class="fc" id="L173">        Registration registration = Registration.builder()</span>
-<span class="fc" id="L174">            .eventId(eventId)</span>
-<span class="fc" id="L175">            .userId(userId)</span>
-<span class="fc" id="L176">            .status(RegistrationStatus.CONFIRMED)</span>
-<span class="fc" id="L177">            .build();</span>
+<span class="fc" id="L182">        Optional&lt;Registration&gt; previous = registrationRepository.findByEventIdAndUserId(eventId, userId);</span>
+        Registration saved;
+<span class="pc bpc" id="L184" title="3 of 4 branches missed.">        if (previous.isPresent() &amp;&amp; previous.get().getStatus() == RegistrationStatus.CANCELLED) {</span>
+<span class="nc" id="L185">            Registration reg = previous.get();</span>
+<span class="nc" id="L186">            reg.setStatus(RegistrationStatus.CONFIRMED);</span>
+<span class="nc" id="L187">            saved = registrationRepository.save(reg);</span>
+<span class="nc" id="L188">        } else {</span>
+<span class="fc" id="L189">            Registration registration = Registration.builder()</span>
+<span class="fc" id="L190">                .eventId(eventId)</span>
+<span class="fc" id="L191">                .userId(userId)</span>
+<span class="fc" id="L192">                .status(RegistrationStatus.CONFIRMED)</span>
+<span class="fc" id="L193">                .build();</span>
+<span class="fc" id="L194">            saved = registrationRepository.save(registration);</span>
+        }
 
-<span class="fc" id="L179">        Registration saved = registrationRepository.save(registration);</span>
+<span class="fc" id="L197">        eventProducer.publishUserRegistered(UserRegisteredEvent.builder()</span>
+<span class="fc" id="L198">            .userId(userId)</span>
+<span class="fc" id="L199">            .eventId(eventId)</span>
+<span class="fc" id="L200">            .eventTitle(event.getTitle())</span>
+<span class="fc" id="L201">            .organizerId(event.getOrganizerId())</span>
+<span class="fc" id="L202">            .build());</span>
 
-<span class="fc" id="L181">        eventProducer.publishUserRegistered(UserRegisteredEvent.builder()</span>
-<span class="fc" id="L182">            .userId(userId)</span>
-<span class="fc" id="L183">            .eventId(eventId)</span>
-<span class="fc" id="L184">            .eventTitle(event.getTitle())</span>
-<span class="fc" id="L185">            .organizerId(event.getOrganizerId())</span>
-<span class="fc" id="L186">            .build());</span>
-
-<span class="fc" id="L188">        return toRegistrationResponse(saved);</span>
+<span class="fc" id="L204">        return toRegistrationResponse(saved);</span>
     }
 
     /**
@@ -196,13 +212,19 @@ public class EventService {
      * @throws RegistrationNotFoundException if no active registration exists
      */
     @Transactional
-    @CacheEvict(value = &quot;events&quot;, key = &quot;#eventId&quot;)
     public void cancelRegistration(UUID eventId, UUID userId) {
-<span class="fc" id="L201">        Registration reg = registrationRepository.findByEventIdAndUserId(eventId, userId)</span>
-<span class="pc" id="L202">            .orElseThrow(() -&gt; new RegistrationNotFoundException(eventId, userId));</span>
-<span class="nc" id="L203">        reg.setStatus(RegistrationStatus.CANCELLED);</span>
-<span class="nc" id="L204">        registrationRepository.save(reg);</span>
-<span class="nc" id="L205">    }</span>
+<span class="pc" id="L216">        Registration reg = registrationRepository</span>
+<span class="fc" id="L217">            .findByEventIdAndUserIdAndStatus(eventId, userId, RegistrationStatus.CONFIRMED)</span>
+<span class="pc" id="L218">            .orElseThrow(() -&gt; new RegistrationNotFoundException(eventId, userId));</span>
+<span class="nc" id="L219">        reg.setStatus(RegistrationStatus.CANCELLED);</span>
+<span class="nc" id="L220">        registrationRepository.save(reg);</span>
+<span class="nc" id="L221">    }</span>
+
+    private boolean isUserConfirmed(UUID eventId, UUID userId) {
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        return userId != null</span>
+<span class="nc" id="L225">            &amp;&amp; registrationRepository.existsByEventIdAndUserIdAndStatus(</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">                eventId, userId, RegistrationStatus.CONFIRMED);</span>
+    }
 
     /**
      * Returns a paginated list of confirmed participants for an event.
@@ -213,9 +235,9 @@ public class EventService {
      * @throws EventNotFoundException if the event does not exist
      */
     public Page&lt;RegistrationResponse&gt; getParticipants(UUID eventId, Pageable pageable) {
-<span class="nc" id="L216">        findByIdOrThrow(eventId);</span>
-<span class="nc" id="L217">        return registrationRepository.findByEventId(eventId, pageable)</span>
-<span class="nc" id="L218">            .map(this::toRegistrationResponse);</span>
+<span class="nc" id="L238">        findByIdOrThrow(eventId);</span>
+<span class="nc" id="L239">        return registrationRepository.findByEventId(eventId, pageable)</span>
+<span class="nc" id="L240">            .map(this::toRegistrationResponse);</span>
     }
 
     /**
@@ -230,29 +252,28 @@ public class EventService {
      * @throws InvalidEventDatesException if end date is not after start date
      */
     @Transactional
-    @CacheEvict(cacheNames = {&quot;events&quot;, &quot;event-list&quot;}, allEntries = true)
     public EventResponse updateEvent(UUID eventId, UpdateEventRequest request, UUID requesterId) {
-<span class="nc" id="L235">        Event event = findByIdOrThrow(eventId);</span>
-<span class="nc bnc" id="L236" title="All 2 branches missed.">        if (!event.getOrganizerId().equals(requesterId)) {</span>
-<span class="nc" id="L237">            throw new UnauthorizedActionException(&quot;Only the organizer can update this event&quot;);</span>
+<span class="nc" id="L256">        Event event = findByIdOrThrow(eventId);</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">        if (!event.getOrganizerId().equals(requesterId)) {</span>
+<span class="nc" id="L258">            throw new UnauthorizedActionException(&quot;Only the organizer can update this event&quot;);</span>
         }
 
-<span class="nc bnc" id="L240" title="All 2 branches missed.">        if (request.getTitle() != null) event.setTitle(request.getTitle());</span>
-<span class="nc bnc" id="L241" title="All 2 branches missed.">        if (request.getDescription() != null) event.setDescription(request.getDescription());</span>
-<span class="nc bnc" id="L242" title="All 2 branches missed.">        if (request.getType() != null) event.setType(request.getType());</span>
-<span class="nc bnc" id="L243" title="All 2 branches missed.">        if (request.getLocation() != null) event.setLocation(request.getLocation());</span>
-<span class="nc bnc" id="L244" title="All 2 branches missed.">        if (request.getMaxParticipants() != null) event.setMaxParticipants(request.getMaxParticipants());</span>
-<span class="nc bnc" id="L245" title="All 2 branches missed.">        if (request.getTags() != null) event.setTags(request.getTags());</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">        if (request.getTitle() != null) event.setTitle(request.getTitle());</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        if (request.getDescription() != null) event.setDescription(request.getDescription());</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        if (request.getType() != null) event.setType(request.getType());</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">        if (request.getLocation() != null) event.setLocation(request.getLocation());</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">        if (request.getMaxParticipants() != null) event.setMaxParticipants(request.getMaxParticipants());</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">        if (request.getTags() != null) event.setTags(request.getTags());</span>
 
-<span class="nc bnc" id="L247" title="All 2 branches missed.">        if (request.getStartDate() != null) event.setStartDate(request.getStartDate());</span>
-<span class="nc bnc" id="L248" title="All 2 branches missed.">        if (request.getEndDate() != null) event.setEndDate(request.getEndDate());</span>
-<span class="nc bnc" id="L249" title="All 4 branches missed.">        if (event.getEndDate() != null &amp;&amp; !event.getEndDate().isAfter(event.getStartDate())) {</span>
-<span class="nc" id="L250">            throw new InvalidEventDatesException();</span>
+<span class="nc bnc" id="L268" title="All 2 branches missed.">        if (request.getStartDate() != null) event.setStartDate(request.getStartDate());</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        if (request.getEndDate() != null) event.setEndDate(request.getEndDate());</span>
+<span class="nc bnc" id="L270" title="All 4 branches missed.">        if (event.getEndDate() != null &amp;&amp; !event.getEndDate().isAfter(event.getStartDate())) {</span>
+<span class="nc" id="L271">            throw new InvalidEventDatesException();</span>
         }
 
-<span class="nc" id="L253">        Event saved = eventRepository.save(event);</span>
-<span class="nc" id="L254">        long count = registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED);</span>
-<span class="nc" id="L255">        return toResponse(saved, count, false);</span>
+<span class="nc" id="L274">        Event saved = eventRepository.save(event);</span>
+<span class="nc" id="L275">        long count = registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED);</span>
+<span class="nc" id="L276">        return toResponse(saved, count, false);</span>
     }
 
     /**
@@ -264,48 +285,47 @@ public class EventService {
      * @throws UnauthorizedActionException if the requester is not the organizer
      */
     @Transactional
-    @CacheEvict(cacheNames = {&quot;events&quot;, &quot;event-list&quot;}, allEntries = true)
     public void deleteEvent(UUID eventId, UUID requesterId) {
-<span class="nc" id="L269">        Event event = findByIdOrThrow(eventId);</span>
-<span class="nc bnc" id="L270" title="All 2 branches missed.">        if (!event.getOrganizerId().equals(requesterId)) {</span>
-<span class="nc" id="L271">            throw new UnauthorizedActionException(&quot;Only the organizer can delete this event&quot;);</span>
+<span class="nc" id="L289">        Event event = findByIdOrThrow(eventId);</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">        if (!event.getOrganizerId().equals(requesterId)) {</span>
+<span class="nc" id="L291">            throw new UnauthorizedActionException(&quot;Only the organizer can delete this event&quot;);</span>
         }
-<span class="nc" id="L273">        eventRepository.delete(event);</span>
-<span class="nc" id="L274">    }</span>
+<span class="nc" id="L293">        eventRepository.delete(event);</span>
+<span class="nc" id="L294">    }</span>
 
     private Event findByIdOrThrow(UUID id) {
-<span class="fc" id="L277">        return eventRepository.findById(id)</span>
-<span class="fc" id="L278">            .orElseThrow(() -&gt; new EventNotFoundException(id));</span>
+<span class="fc" id="L297">        return eventRepository.findById(id)</span>
+<span class="fc" id="L298">            .orElseThrow(() -&gt; new EventNotFoundException(id));</span>
     }
 
     private EventResponse toResponse(Event event, long participantCount, boolean userRegistered) {
-<span class="fc" id="L282">        return EventResponse.builder()</span>
-<span class="fc" id="L283">            .id(event.getId())</span>
-<span class="fc" id="L284">            .title(event.getTitle())</span>
-<span class="fc" id="L285">            .description(event.getDescription())</span>
-<span class="fc" id="L286">            .type(event.getType())</span>
-<span class="fc" id="L287">            .startDate(event.getStartDate())</span>
-<span class="fc" id="L288">            .endDate(event.getEndDate())</span>
-<span class="fc" id="L289">            .location(event.getLocation())</span>
-<span class="fc" id="L290">            .maxParticipants(event.getMaxParticipants())</span>
-<span class="fc" id="L291">            .organizerId(event.getOrganizerId())</span>
-<span class="fc" id="L292">            .status(event.getStatus())</span>
-<span class="fc" id="L293">            .tags(event.getTags())</span>
-<span class="fc" id="L294">            .participantCount(participantCount)</span>
-<span class="fc" id="L295">            .userRegistered(userRegistered)</span>
-<span class="fc" id="L296">            .createdAt(event.getCreatedAt())</span>
-<span class="fc" id="L297">            .updatedAt(event.getUpdatedAt())</span>
-<span class="fc" id="L298">            .build();</span>
+<span class="fc" id="L302">        return EventResponse.builder()</span>
+<span class="fc" id="L303">            .id(event.getId())</span>
+<span class="fc" id="L304">            .title(event.getTitle())</span>
+<span class="fc" id="L305">            .description(event.getDescription())</span>
+<span class="fc" id="L306">            .type(event.getType())</span>
+<span class="fc" id="L307">            .startDate(event.getStartDate())</span>
+<span class="fc" id="L308">            .endDate(event.getEndDate())</span>
+<span class="fc" id="L309">            .location(event.getLocation())</span>
+<span class="fc" id="L310">            .maxParticipants(event.getMaxParticipants())</span>
+<span class="fc" id="L311">            .organizerId(event.getOrganizerId())</span>
+<span class="fc" id="L312">            .status(event.getStatus())</span>
+<span class="pc bpc" id="L313" title="1 of 2 branches missed.">            .tags(event.getTags() != null ? event.getTags() : java.util.Set.of())</span>
+<span class="fc" id="L314">            .participantCount(participantCount)</span>
+<span class="fc" id="L315">            .userRegistered(userRegistered)</span>
+<span class="fc" id="L316">            .createdAt(event.getCreatedAt())</span>
+<span class="fc" id="L317">            .updatedAt(event.getUpdatedAt())</span>
+<span class="fc" id="L318">            .build();</span>
     }
 
     private RegistrationResponse toRegistrationResponse(Registration r) {
-<span class="fc" id="L302">        return RegistrationResponse.builder()</span>
-<span class="fc" id="L303">            .id(r.getId())</span>
-<span class="fc" id="L304">            .eventId(r.getEventId())</span>
-<span class="fc" id="L305">            .userId(r.getUserId())</span>
-<span class="fc" id="L306">            .registeredAt(r.getRegisteredAt())</span>
-<span class="fc" id="L307">            .status(r.getStatus())</span>
-<span class="fc" id="L308">            .build();</span>
+<span class="fc" id="L322">        return RegistrationResponse.builder()</span>
+<span class="fc" id="L323">            .id(r.getId())</span>
+<span class="fc" id="L324">            .eventId(r.getEventId())</span>
+<span class="fc" id="L325">            .userId(r.getUserId())</span>
+<span class="fc" id="L326">            .registeredAt(r.getRegisteredAt())</span>
+<span class="fc" id="L327">            .status(r.getStatus())</span>
+<span class="fc" id="L328">            .build();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

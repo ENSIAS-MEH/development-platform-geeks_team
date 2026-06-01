@@ -27,6 +27,7 @@ import { SettingsPage } from "./pages/settings-page";
 // Event Organizer pages
 import { OrganizerDashboardPage } from "./pages/organizer-dashboard-page";
 import { CreateEventPage } from "./pages/create-event-page";
+import { EditEventPage } from "./pages/edit-event-page";
 import { ManageParticipantsPage } from "./pages/manage-participants-page";
 import { TeamFormationPage } from "./pages/team-formation-page";
 import { EventAnalyticsPage } from "./pages/event-analytics-page";
@@ -78,6 +79,7 @@ export const router = createBrowserRouter([
           // Event Organizer pages
           { path: "organizer", Component: OrganizerDashboardPage },
           { path: "organizer/events/create", Component: CreateEventPage },
+          { path: "organizer/events/:id/edit", Component: EditEventPage },
           { path: "organizer/events/:id/participants", Component: ManageParticipantsPage },
           { path: "organizer/events/:id/teams", Component: TeamFormationPage },
           { path: "organizer/events/:id/analytics", Component: EventAnalyticsPage },

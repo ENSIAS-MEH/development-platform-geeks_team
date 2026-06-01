@@ -6,15 +6,18 @@ import com.devconnect.eventservice.enums.*;
 import com.devconnect.eventservice.exception.*;
 import com.devconnect.eventservice.kafka.EventProducer;
 import com.devconnect.eventservice.kafka.event.*;
-import com.devconnect.eventservice.repository.*;
+import com.devconnect.eventservice.repository.EventRepository;
+import com.devconnect.eventservice.repository.EventSpecifications;
+import com.devconnect.eventservice.repository.RegistrationRepository;
+import org.springframework.data.jpa.domain.Specification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.*;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -24,7 +27,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@CacheConfig(cacheNames = "events")
 public class EventService {
 
     private final EventRepository eventRepository;
@@ -40,7 +42,6 @@ public class EventService {
      * @throws InvalidEventDatesException if endDate is not after startDate
      */
     @Transactional
-    @CacheEvict(cacheNames = "event-list", allEntries = true)
     public EventResponse createEvent(CreateEventRequest request, UUID organizerId) {
         if (request.getEndDate() != null && request.getStartDate() != null
             && !request.getEndDate().isAfter(request.getStartDate())) {
@@ -83,7 +84,6 @@ public class EventService {
      * @throws UnauthorizedActionException if the requester is not the organizer
      */
     @Transactional
-    @CacheEvict(value = "events", key = "#eventId")
     public EventResponse publishEvent(UUID eventId, UUID requesterId) {
         Event event = findByIdOrThrow(eventId);
         if (!event.getOrganizerId().equals(requesterId)) {
@@ -110,11 +110,10 @@ public class EventService {
      * @return the event response
      * @throws EventNotFoundException if not found
      */
-    @Cacheable(key = "#eventId")
     public EventResponse getEventById(UUID eventId, UUID currentUserId) {
         Event event = findByIdOrThrow(eventId);
         long count = registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED);
-        boolean registered = currentUserId != null && registrationRepository.existsByEventIdAndUserId(eventId, currentUserId);
+        boolean registered = isUserConfirmed(eventId, currentUserId);
         return toResponse(event, count, registered);
     }
 
@@ -129,13 +128,23 @@ public class EventService {
      * @param pageable pagination parameters
      * @return paginated event responses
      */
-    @Cacheable(cacheNames = "event-list", key = "#type + '_' + #status + '_' + #keyword + '_' + #pageable.pageNumber")
-    public Page<EventResponse> searchEvents(EventType type, EventStatus status, String keyword,
-                                            LocalDateTime dateFrom, LocalDateTime dateTo, Pageable pageable) {
-        return eventRepository.searchEvents(type, status, keyword, dateFrom, dateTo, pageable)
+    public Page<EventResponse> searchEvents(EventType type, EventStatus status, UUID organizerId,
+                                            String keyword, LocalDateTime dateFrom, LocalDateTime dateTo,
+                                            UUID currentUserId, Pageable pageable) {
+        String normalizedKeyword = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        Specification<com.devconnect.eventservice.entity.Event> spec = Specification
+            .where(EventSpecifications.withType(type))
+            .and(EventSpecifications.withStatus(status))
+            .and(EventSpecifications.withOrganizerId(organizerId))
+            .and(EventSpecifications.withKeyword(normalizedKeyword))
+            .and(EventSpecifications.withStartDateFrom(dateFrom))
+            .and(EventSpecifications.withStartDateTo(dateTo));
+
+        return eventRepository.findAll(spec, pageable)
             .map(event -> {
                 long count = registrationRepository.countByEventIdAndStatus(event.getId(), RegistrationStatus.CONFIRMED);
-                return toResponse(event, count, false);
+                boolean registered = isUserConfirmed(event.getId(), currentUserId);
+                return toResponse(event, count, registered);
             });
     }
 
@@ -153,14 +162,14 @@ public class EventService {
      * @throws EventFullException if the event has reached its participant limit
      */
     @Transactional
-    @CacheEvict(value = "events", key = "#eventId")
     public RegistrationResponse registerForEvent(UUID eventId, UUID userId) {
         Event event = findByIdOrThrow(eventId);
 
         if (event.getStatus() != EventStatus.PUBLISHED) {
             throw new EventNotPublishedException(eventId);
         }
-        if (registrationRepository.existsByEventIdAndUserId(eventId, userId)) {
+        if (registrationRepository.existsByEventIdAndUserIdAndStatus(
+            eventId, userId, RegistrationStatus.CONFIRMED)) {
             throw new AlreadyRegisteredException(eventId, userId);
         }
         if (event.getMaxParticipants() != null) {
@@ -170,13 +179,20 @@ public class EventService {
             }
         }
 
-        Registration registration = Registration.builder()
-            .eventId(eventId)
-            .userId(userId)
-            .status(RegistrationStatus.CONFIRMED)
-            .build();
-
-        Registration saved = registrationRepository.save(registration);
+        Optional<Registration> previous = registrationRepository.findByEventIdAndUserId(eventId, userId);
+        Registration saved;
+        if (previous.isPresent() && previous.get().getStatus() == RegistrationStatus.CANCELLED) {
+            Registration reg = previous.get();
+            reg.setStatus(RegistrationStatus.CONFIRMED);
+            saved = registrationRepository.save(reg);
+        } else {
+            Registration registration = Registration.builder()
+                .eventId(eventId)
+                .userId(userId)
+                .status(RegistrationStatus.CONFIRMED)
+                .build();
+            saved = registrationRepository.save(registration);
+        }
 
         eventProducer.publishUserRegistered(UserRegisteredEvent.builder()
             .userId(userId)
@@ -196,12 +212,18 @@ public class EventService {
      * @throws RegistrationNotFoundException if no active registration exists
      */
     @Transactional
-    @CacheEvict(value = "events", key = "#eventId")
     public void cancelRegistration(UUID eventId, UUID userId) {
-        Registration reg = registrationRepository.findByEventIdAndUserId(eventId, userId)
+        Registration reg = registrationRepository
+            .findByEventIdAndUserIdAndStatus(eventId, userId, RegistrationStatus.CONFIRMED)
             .orElseThrow(() -> new RegistrationNotFoundException(eventId, userId));
         reg.setStatus(RegistrationStatus.CANCELLED);
         registrationRepository.save(reg);
+    }
+
+    private boolean isUserConfirmed(UUID eventId, UUID userId) {
+        return userId != null
+            && registrationRepository.existsByEventIdAndUserIdAndStatus(
+                eventId, userId, RegistrationStatus.CONFIRMED);
     }
 
     /**
@@ -230,7 +252,6 @@ public class EventService {
      * @throws InvalidEventDatesException if end date is not after start date
      */
     @Transactional
-    @CacheEvict(cacheNames = {"events", "event-list"}, allEntries = true)
     public EventResponse updateEvent(UUID eventId, UpdateEventRequest request, UUID requesterId) {
         Event event = findByIdOrThrow(eventId);
         if (!event.getOrganizerId().equals(requesterId)) {
@@ -264,7 +285,6 @@ public class EventService {
      * @throws UnauthorizedActionException if the requester is not the organizer
      */
     @Transactional
-    @CacheEvict(cacheNames = {"events", "event-list"}, allEntries = true)
     public void deleteEvent(UUID eventId, UUID requesterId) {
         Event event = findByIdOrThrow(eventId);
         if (!event.getOrganizerId().equals(requesterId)) {
@@ -290,7 +310,7 @@ public class EventService {
             .maxParticipants(event.getMaxParticipants())
             .organizerId(event.getOrganizerId())
             .status(event.getStatus())
-            .tags(event.getTags())
+            .tags(event.getTags() != null ? event.getTags() : java.util.Set.of())
             .participantCount(participantCount)
             .userRegistered(userRegistered)
             .createdAt(event.getCreatedAt())

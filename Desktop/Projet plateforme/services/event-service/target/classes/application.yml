@@ -39,8 +39,10 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: 6379
+  # Redis cache was causing 500 on GET /api/events (Page<> serialization).
+  # Re-enable "redis" after configuring Jackson-compatible RedisCacheManager.
   cache:
-    type: redis
+    type: none
 
 springdoc:
   api-docs:
