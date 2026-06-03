@@ -38,7 +38,17 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      '/api': {
+      '/api/projects': {
+        target: 'http://127.0.0.1:8083',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/groups': {
+        target: 'http://127.0.0.1:8085',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/posts': {
         target: 'http://127.0.0.1:8085',
         changeOrigin: true,
         secure: false,
