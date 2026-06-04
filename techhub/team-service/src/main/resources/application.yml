@@ -44,7 +44,7 @@ spring:
   # ── JPA / Hibernate ───────────────────────────
   jpa:
     hibernate:
-      ddl-auto: validate                 # schema.sql owns DDL — never let Hibernate drift it
+      ddl-auto: create                   # Hibernate creates schema from @Entity annotations
     show-sql: false                      # override to true in dev profile only
     open-in-view: false                  # prevent accidental lazy-load anti-pattern
     properties:
@@ -57,17 +57,15 @@ spring:
           order_inserts: true
           order_updates: true
         cache:
-          use_second_level_cache: true
-          use_query_cache: true
+          use_second_level_cache: false
+          use_query_cache: false
           region:
-            factory_class: org.redisson.hibernate.RedissonRegionFactory
+            factory_class: org.hibernate.cache.internal.NoCachingRegionFactory
 
   # ── SQL initialization ────────────────────────
   sql:
     init:
-      mode: always
-      schema-locations: classpath:schema.sql
-      data-locations: classpath:data.sql
+      mode: never
       encoding: UTF-8
 
   # ── Redis (second-level cache + session store) ─
@@ -182,7 +180,8 @@ app:
   team:
     default-max-members: 10
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+    # include Vite dev server (default 5173) and local frontend
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
 
 # ── Logging ────────────────────────────────────
 logging:

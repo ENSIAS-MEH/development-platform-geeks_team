@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.transaction.KafkaTransactionManager;
 
 /**
  * KafkaConfig
@@ -70,11 +69,14 @@ public class KafkaConfig {
     }
 
     // ── Transaction Manager (optional — enable if you need exactly-once semantics) ──
+    // NOTE: Disabled for now to avoid ProducerFactory transaction config requirements
+    // To enable, ensure spring.kafka.producer.properties.transactions.id is set
+    // and ProducerFactory is configured with transactions support
 
-    @Bean
+    /*@Bean
     public KafkaTransactionManager<String, Object> kafkaTransactionManager(
             ProducerFactory<String, Object> producerFactory) {
         return new KafkaTransactionManager<>(producerFactory);
-    }
+    }*/
 }
 

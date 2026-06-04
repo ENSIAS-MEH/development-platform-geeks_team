@@ -26,7 +26,7 @@ VALUES
      'Spring hackathon formation group',
      3, 1, 'OPEN',
      'u1000000-0000-0000-0000-000000000003')
-ON CONFLICT (id) DO NOTHING;
+    ON CONFLICT (id) DO NOTHING;
 
 -- ── Seed Team Members ─────────────────────────────────────────
 INSERT INTO team_members (id, team_id, user_id, role)
@@ -57,7 +57,7 @@ VALUES
     ('b1000000-0000-0000-0000-000000000007',
      'a1000000-0000-0000-0000-000000000003',
      'u1000000-0000-0000-0000-000000000003', 'OWNER')
-ON CONFLICT DO NOTHING;
+    ON CONFLICT DO NOTHING;
 
 -- ── Seed Invitations ─────────────────────────────────────────
 INSERT INTO team_invitations (id, team_id, sender_id, receiver_id, status, expiration_time)
@@ -82,4 +82,5 @@ VALUES
      'u1000000-0000-0000-0000-000000000010',
      'EXPIRED',
      now() - INTERVAL '1 hour')
-ON CONFLICT DO NOTHING;
+    ON CONFLICT DO NOTHING;
+
