@@ -1,5 +1,6 @@
 package com.techhub.community.service;
 
+import com.techhub.community.dto.PostCreatedEvent;
 import com.techhub.community.dto.PostRequest;
 import com.techhub.community.dto.PostResponse;
 import com.techhub.community.entity.Post;
@@ -14,10 +15,10 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -28,6 +29,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final GroupMemberRepository memberRepository;
     private final GroupService groupService;
+    private final KafkaEventProducer kafkaEventProducer;
 
     // ─── Create ─────────────────────────────────────────────────────────
 
@@ -50,7 +52,19 @@ public class PostService {
                 .type(request.getType())
                 .build();
 
-        return toResponse(postRepository.save(post));
+        post = postRepository.save(post);
+
+        // Publish Kafka event
+        kafkaEventProducer.publishPostCreated(PostCreatedEvent.builder()
+                .postId(post.getId())
+                .groupId(post.getGroupId())
+                .authorId(post.getAuthorId())
+                .title(post.getTitle())
+                .type(post.getType().name())
+                .createdAt(post.getCreatedAt())
+                .build());
+
+        return toResponse(post);
     }
 
     // ─── Read ───────────────────────────────────────────────────────────

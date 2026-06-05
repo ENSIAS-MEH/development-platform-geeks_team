@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: techhub
+  labels:
+    app.kubernetes.io/part-of: techhub
+    app.kubernetes.io/managed-by: kubectl

@@ -103,6 +103,100 @@ class PostControllerIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    // ─── GET posts sorted by popularity ─────────────────────────────────
+
+    @Test
+    @DisplayName("GET /api/groups/{id}/posts?sortByPopularity=true → 200 sorted by upvotes")
+    void getPostsSortedByPopularity() throws Exception {
+        // Create multiple posts
+        for (int i = 0; i < 3; i++) {
+            PostRequest req = PostRequest.builder()
+                    .title("Post " + i)
+                    .content("Content " + i)
+                    .type(PostType.DISCUSSION)
+                    .build();
+
+            mockMvc.perform(post("/api/groups/" + groupId + "/posts")
+                    .header(USER_HEADER, ownerId.toString())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isCreated());
+        }
+
+        // Get posts sorted by popularity
+        mockMvc.perform(get("/api/groups/" + groupId + "/posts")
+                .param("sortByPopularity", "true")
+                .param("page", "0")
+                .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(3)));
+    }
+
+    // ─── Upvote post ────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("POST /api/groups/{gid}/posts/{pid}/upvote → 200")
+    void upvotePost() throws Exception {
+        // Create a post
+        PostRequest request = PostRequest.builder()
+                .title("Upvote Me")
+                .content("Please upvote")
+                .type(PostType.DISCUSSION)
+                .build();
+
+        String postBody = mockMvc.perform(post("/api/groups/" + groupId + "/posts")
+                .header(USER_HEADER, ownerId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        String postId = objectMapper.readTree(postBody).get("id").asText();
+
+        // Upvote
+        mockMvc.perform(post("/api/groups/" + groupId + "/posts/" + postId + "/upvote"))
+                .andExpect(status().isOk());
+
+        // Verify upvote count increased
+        mockMvc.perform(get("/api/groups/" + groupId + "/posts/" + postId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.upvotes").value(1));
+    }
+
+    // ─── Create comment ─────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("POST /api/groups/{gid}/posts/{pid}/comments → 201")
+    void createComment() throws Exception {
+        // Create a post first
+        PostRequest postReq = PostRequest.builder()
+                .title("Comment Test Post")
+                .content("Testing comments")
+                .type(PostType.DISCUSSION)
+                .build();
+
+        String postBody = mockMvc.perform(post("/api/groups/" + groupId + "/posts")
+                .header(USER_HEADER, ownerId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(postReq)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        String postId = objectMapper.readTree(postBody).get("id").asText();
+
+        // Create comment
+        CommentRequest commentReq = CommentRequest.builder()
+                .content("Great post!")
+                .build();
+
+        mockMvc.perform(post("/api/groups/" + groupId + "/posts/" + postId + "/comments")
+                .header(USER_HEADER, ownerId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(commentReq)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.content").value("Great post!"));
+    }
+
     // ─── Full post + comment + upvote flow ──────────────────────────────
 
     @Test
