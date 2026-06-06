@@ -20,21 +20,28 @@ export default defineConfig({
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
 
-  // ── Dev proxy: forward /api → Community Service backend ──────────
+  // ── Dev proxy ─────────────────────────────────────────────────────
   server: {
     proxy: {
       '/api/auth': {
-        target: 'http://127.0.0.1:8081',
+        target: 'http://127.0.0.1:8080',
         changeOrigin: true,
         secure: false,
       },
       '/api/users': {
-        target: 'http://127.0.0.1:8081',
+        target: 'http://127.0.0.1:8080',
         changeOrigin: true,
         secure: false,
       },
+      // Notification service — prefix stripped before forwarding
+      '/notifications': {
+        target: 'http://127.0.0.1:8086',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/notifications/, ''),
+      },
       '/api': {
-        target: 'http://127.0.0.1:8085',
+        target: 'http://127.0.0.1:8083',
         changeOrigin: true,
         secure: false,
       },
