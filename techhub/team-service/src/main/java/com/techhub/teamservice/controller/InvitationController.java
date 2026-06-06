@@ -3,6 +3,7 @@ package com.techhub.teamservice.controller;
 import com.techhub.teamservice.dto.InvitationRequest;
 import com.techhub.teamservice.dto.InvitationResponse;
 import com.techhub.teamservice.service.InvitationService;
+import com.techhub.teamservice.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,14 +21,13 @@ public class InvitationController {
 
     @PostMapping
     public ResponseEntity<InvitationResponse> invite(@Valid @RequestBody InvitationRequest request) {
-        // In real app, senderId comes from SecurityUtils.getCurrentUserId()
-        InvitationResponse created = invitationService.invite(request, UUID.randomUUID());
+        InvitationResponse created = invitationService.invite(request, SecurityUtils.getCurrentUserId());
         return ResponseEntity.ok(created);
     }
 
     @PostMapping("/{id}:accept")
     public ResponseEntity<InvitationResponse> accept(@PathVariable UUID id) {
-        InvitationResponse resp = invitationService.accept(id, UUID.randomUUID());
+        InvitationResponse resp = invitationService.accept(id, SecurityUtils.getCurrentUserId());
         return ResponseEntity.ok(resp);
     }
 

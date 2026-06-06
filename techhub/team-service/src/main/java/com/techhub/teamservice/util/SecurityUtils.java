@@ -43,6 +43,24 @@ public final class SecurityUtils {
     }
 
     /**
+     * Returns the UUID of the authenticated user, or {@code null} if the request
+     * is unauthenticated. Use this for endpoints that are publicly accessible but
+     * enrich the response when a caller is logged in (e.g. setting isOwner flag).
+     */
+    public static UUID getCurrentUserIdOrNull() {
+        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return null;
+        }
+        try {
+            return UUID.fromString(authentication.getPrincipal().toString());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    /**
      * Returns {@code true} if the current user holds the given role.
      * Role names are compared WITHOUT the {@code ROLE_} prefix.
      */

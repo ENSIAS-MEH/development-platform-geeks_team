@@ -1,6 +1,7 @@
 package com.techhub.teamservice.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,6 +16,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -38,6 +40,9 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint authEntryPoint;
 
+    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+    private String allowedOrigins;
+
     // ─────────────────────────── Security Filter Chain ─────────────────
 
     @Bean
@@ -60,8 +65,17 @@ public class SecurityConfig {
                 // ── Authorization rules ─────────────────────────────────
                 .authorizeHttpRequests(auth -> auth
 
-                        // Actuator health/info — no auth needed (for Docker/K8s probes)
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        // Actuator — no auth needed for K8s probes and Prometheus scraping
+                        .requestMatchers("/actuator/health/**", "/actuator/info",
+                                         "/actuator/prometheus").permitAll()
+
+                        // Swagger UI / OpenAPI docs — dev only
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**"
+                        ).permitAll()
 
                         // Public read-only endpoints
                         .requestMatchers(HttpMethod.GET, "/teams/{id}").permitAll()
@@ -82,8 +96,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // In production, override CORS_ALLOWED_ORIGINS via env var
-        config.setAllowedOriginPatterns(List.of("http://localhost:3000", "https://*.techhub.com"));
+        List<String> origins = Arrays.asList(allowedOrigins.split(","));
+        config.setAllowedOriginPatterns(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         config.setExposedHeaders(List.of("X-Total-Count"));

@@ -1,12 +1,10 @@
--- ════════════════════════════════════════════════════════════
+-- ════════════════════════════════════════════════════════════════
 --  TechHub — Team Service  |  data.sql  (seed / demo data)
---  Only runs when spring.sql.init.mode = always (dev/test)
--- ════════════════════════════════════════════════════════════
+--  Fixed UUIDs so tests can reference them by constant value.
+--  User UUIDs (u1…) are borrowed from user-service fixtures.
+-- ════════════════════════════════════════════════════════════════
 
--- Use fixed UUIDs so tests can reference them reliably
--- User IDs are borrowed from user-service fixtures
-
--- ── Seed Teams ───────────────────────────────────────────────
+-- ── Seed teams ──────────────────────────────────────────────────
 INSERT INTO teams (id, name, description, max_members, current_members, status, owner_id)
 VALUES
     ('a1000000-0000-0000-0000-000000000001',
@@ -17,7 +15,7 @@ VALUES
 
     ('a1000000-0000-0000-0000-000000000002',
      'Cloud Infra Squad',
-     'DevOps and cloud architecture enthusiasts',
+     'DevOps and cloud architecture',
      4, 4, 'FULL',
      'u1000000-0000-0000-0000-000000000002'),
 
@@ -26,12 +24,12 @@ VALUES
      'Spring hackathon formation group',
      3, 1, 'OPEN',
      'u1000000-0000-0000-0000-000000000003')
-    ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
--- ── Seed Team Members ─────────────────────────────────────────
+-- ── Seed team members ────────────────────────────────────────────
 INSERT INTO team_members (id, team_id, user_id, role)
 VALUES
-    -- Team 1
+    -- Team 1: AI Research
     ('b1000000-0000-0000-0000-000000000001',
      'a1000000-0000-0000-0000-000000000001',
      'u1000000-0000-0000-0000-000000000001', 'OWNER'),
@@ -39,7 +37,7 @@ VALUES
      'a1000000-0000-0000-0000-000000000001',
      'u1000000-0000-0000-0000-000000000004', 'MEMBER'),
 
-    -- Team 2 (FULL)
+    -- Team 2: Cloud Infra (FULL — 4/4)
     ('b1000000-0000-0000-0000-000000000003',
      'a1000000-0000-0000-0000-000000000002',
      'u1000000-0000-0000-0000-000000000002', 'OWNER'),
@@ -53,15 +51,17 @@ VALUES
      'a1000000-0000-0000-0000-000000000002',
      'u1000000-0000-0000-0000-000000000007', 'MEMBER'),
 
-    -- Team 3
+    -- Team 3: Hackathon Alpha
     ('b1000000-0000-0000-0000-000000000007',
      'a1000000-0000-0000-0000-000000000003',
      'u1000000-0000-0000-0000-000000000003', 'OWNER')
-    ON CONFLICT DO NOTHING;
+ON CONFLICT DO NOTHING;
 
--- ── Seed Invitations ─────────────────────────────────────────
-INSERT INTO team_invitations (id, team_id, sender_id, receiver_id, status, expiration_time)
+-- ── Seed invitations ─────────────────────────────────────────────
+INSERT INTO team_invitations
+    (id, team_id, sender_id, receiver_id, status, expiration_time)
 VALUES
+    -- PENDING — expires in 48h
     ('c1000000-0000-0000-0000-000000000001',
      'a1000000-0000-0000-0000-000000000001',
      'u1000000-0000-0000-0000-000000000001',
@@ -69,6 +69,7 @@ VALUES
      'PENDING',
      now() + INTERVAL '48 hours'),
 
+    -- PENDING — expires in 24h
     ('c1000000-0000-0000-0000-000000000002',
      'a1000000-0000-0000-0000-000000000003',
      'u1000000-0000-0000-0000-000000000003',
@@ -76,11 +77,19 @@ VALUES
      'PENDING',
      now() + INTERVAL '24 hours'),
 
+    -- EXPIRED — already past expiry (tests scheduler logic)
     ('c1000000-0000-0000-0000-000000000003',
      'a1000000-0000-0000-0000-000000000001',
      'u1000000-0000-0000-0000-000000000001',
      'u1000000-0000-0000-0000-000000000010',
      'EXPIRED',
-     now() - INTERVAL '1 hour')
-    ON CONFLICT DO NOTHING;
+     now() - INTERVAL '1 hour'),
 
+    -- ACCEPTED
+    ('c1000000-0000-0000-0000-000000000004',
+     'a1000000-0000-0000-0000-000000000001',
+     'u1000000-0000-0000-0000-000000000001',
+     'u1000000-0000-0000-0000-000000000004',
+     'ACCEPTED',
+     now() + INTERVAL '48 hours')
+ON CONFLICT DO NOTHING;

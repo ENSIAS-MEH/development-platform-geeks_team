@@ -5,7 +5,7 @@
 #
 #  Usage:
 #    # Start only infrastructure (for IDE development):
-#    docker compose up postgres redis kafka zookeeper -d
+#    docker compose up postgres-team redis kafka -d
 #
 #    # Start team-service + all its dependencies:
 #    docker compose up team-service -d
@@ -233,47 +233,10 @@ services:
         max-file: "2"
 
   # ─────────────────────────────────────────────────────────────────
-  # ZOOKEEPER — Required by Kafka for broker coordination
-  # Port: 2181 (governance §2.3)
-  # Owner: Member 3
-  # ─────────────────────────────────────────────────────────────────
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.6.1   # Pin Confluent Platform version
-    container_name: techhub-zookeeper
-    restart: unless-stopped
-
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_SYNC_LIMIT: 2
-
-    ports:
-      - "2181:2181"
-
-    healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-    volumes:
-      - zookeeper-data:/var/lib/zookeeper/data
-      - zookeeper-logs:/var/lib/zookeeper/log
-
-    networks:
-      - techhub-net
-
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "2"
-
-  # ─────────────────────────────────────────────────────────────────
   # KAFKA — Event bus for team-service → notification-service events
   # Topics: team-created, team-invited, team-joined, team-full, team-left
-  # Port: 9092 (governance §2.3)
+  # Mode: KRaft (no ZooKeeper)
+  # Port: 9092 (container-to-container), 9094 (host access)
   # Owner: Member 3
   # ─────────────────────────────────────────────────────────────────
   kafka:
@@ -281,26 +244,26 @@ services:
     container_name: techhub-kafka
     restart: unless-stopped
 
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-
     ports:
-      - "9092:9092"   # Broker accessible from host (for local testing with kafka-ui, kcat)
-      - "9093:9093"   # Internal listener for container-to-container communication
+      - "9092:9092"   # INTERNAL listener — container-to-container (team-service → kafka)
+      - "9094:9094"   # EXTERNAL listener — host access (IDE, kcat)
 
     environment:
-      # ── Broker identity ──────────────────────────────────────────
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # ── KRaft broker identity ─────────────────────────────────────
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
 
       # ── Listener configuration ────────────────────────────────────
-      # PLAINTEXT     → host machines (e.g. your IDE, kafka-ui)
-      # PLAINTEXT_INT → container-to-container (team-service → kafka)
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INT:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INT://kafka:9093
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INT://0.0.0.0:9093
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INT
+      # INTERNAL → container-to-container (team-service uses kafka:9092)
+      # EXTERNAL → host machines (your IDE, kcat uses localhost:9094)
+      # CONTROLLER → KRaft controller plane (not exposed externally)
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
 
       # ── Topic defaults ────────────────────────────────────────────
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"    # Dev only — false in prod
@@ -312,10 +275,11 @@ services:
       KAFKA_LOG_RETENTION_HOURS: 168             # 7 days
       KAFKA_LOG_SEGMENT_BYTES: 1073741824        # 1 GB per segment
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
 
     healthcheck:
-      test: ["CMD-SHELL",
-             "kafka-topics --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -352,8 +316,7 @@ services:
 
     environment:
       KAFKA_CLUSTERS_0_NAME: techhub-local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       DYNAMIC_CONFIG_ENABLED: "true"
 
     profiles:
@@ -441,10 +404,6 @@ volumes:
   redis-data:
     driver: local
   kafka-data:
-    driver: local
-  zookeeper-data:
-    driver: local
-  zookeeper-logs:
     driver: local
   team-service-logs:
     driver: local

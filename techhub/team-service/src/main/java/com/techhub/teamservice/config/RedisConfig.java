@@ -43,13 +43,14 @@ public class RedisConfig {
     public static final String CACHE_TEAM_MEMBERS = "team-members";
     public static final String CACHE_INVITATIONS  = "invitations";
 
-    // ── ObjectMapper for Redis (separate from web ObjectMapper) ──────────
+    // ── ObjectMapper for Redis only — NOT exposed as a bean so Spring Boot's
+    //    JacksonAutoConfiguration still creates the web ObjectMapper separately.
+    //    Exposing it as @Bean would trigger @ConditionalOnMissingBean and cause
+    //    the type-annotated Redis mapper to be used for HTTP responses too.
 
-    @Bean("redisObjectMapper")
-    public ObjectMapper redisObjectMapper() {
+    private ObjectMapper buildRedisObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
-        // Include type info so deserialization works for polymorphic types
         mapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL,
@@ -69,7 +70,7 @@ public class RedisConfig {
 
         StringRedisSerializer keySerializer = new StringRedisSerializer();
         GenericJackson2JsonRedisSerializer valueSerializer =
-                new GenericJackson2JsonRedisSerializer(redisObjectMapper());
+                new GenericJackson2JsonRedisSerializer(buildRedisObjectMapper());
 
         template.setKeySerializer(keySerializer);
         template.setHashKeySerializer(keySerializer);
@@ -85,7 +86,7 @@ public class RedisConfig {
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         GenericJackson2JsonRedisSerializer serializer =
-                new GenericJackson2JsonRedisSerializer(redisObjectMapper());
+                new GenericJackson2JsonRedisSerializer(buildRedisObjectMapper());
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofSeconds(defaultTtlSeconds))

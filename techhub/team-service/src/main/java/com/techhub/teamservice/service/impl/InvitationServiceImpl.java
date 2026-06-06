@@ -50,9 +50,10 @@ public class InvitationServiceImpl implements InvitationService {
             throw new TeamFullException(team.getId());
         }
 
-        invitationRepository.findByTeamIdAndReceiverIdAndStatus(
-                        request.teamId(), request.receiverId(), InvitationStatus.PENDING)
-                .ifPresent(i -> { throw new DuplicateInvitationException(request.receiverId(), request.teamId()); });
+        if (invitationRepository.existsByTeamIdAndReceiverIdAndStatus(
+                request.teamId(), request.receiverId(), InvitationStatus.PENDING)) {
+            throw new DuplicateInvitationException(request.receiverId(), request.teamId());
+        }
 
         Instant now = Instant.now();
 
@@ -69,8 +70,8 @@ public class InvitationServiceImpl implements InvitationService {
 
         TeamInvitation saved = invitationRepository.save(entity);
 
-        // publish event stub (topic wiring handled in TeamEventProducer)
-        teamEventProducer.sendTeamCreated(Map.of("event","team-invited","invitationId", saved.getId()));
+        teamEventProducer.sendTeamInvited(Map.of("event", "team-invited", "invitationId", saved.getId(),
+                "teamId", saved.getTeamId(), "receiverId", saved.getReceiverId()));
 
         return invitationMapper.toResponse(saved);
     }
@@ -128,8 +129,7 @@ public class InvitationServiceImpl implements InvitationService {
         inv.setUpdatedAt(now);
         invitationRepository.save(inv);
 
-        // publish event stub
-        teamEventProducer.sendTeamCreated(Map.of("event","team-joined","teamId", team.getId(), "userId", receiverId));
+        teamEventProducer.sendTeamJoined(Map.of("event", "team-joined", "teamId", team.getId(), "userId", receiverId));
 
         return invitationMapper.toResponse(inv);
     }
@@ -137,7 +137,7 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     public void expirePendingInvitations() {
         Instant now = Instant.now();
-        List<TeamInvitation> expired = invitationRepository.findAllByStatusAndExpirationTimeLessThanEqual(InvitationStatus.PENDING, now);
+        List<TeamInvitation> expired = invitationRepository.findExpiredInvitations(now);
         if (!expired.isEmpty()) {
             expired.forEach(i -> {
                 i.setStatus(InvitationStatus.EXPIRED);
@@ -149,7 +149,7 @@ public class InvitationServiceImpl implements InvitationService {
 
     @Override
     public List<InvitationResponse> listPendingForUser(UUID userId) {
-        List<TeamInvitation> list = invitationRepository.findAllByReceiverIdAndStatus(userId, InvitationStatus.PENDING);
+        List<TeamInvitation> list = invitationRepository.findByReceiverIdAndStatusOrderByCreatedAtDesc(userId, InvitationStatus.PENDING);
         return list.stream().map(invitationMapper::toResponse).toList();
     }
 }

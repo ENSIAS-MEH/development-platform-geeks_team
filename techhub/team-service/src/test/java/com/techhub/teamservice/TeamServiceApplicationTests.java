@@ -1,4 +1,4 @@
-package com.example.team_service;
+package com.techhub.teamservice.entity;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

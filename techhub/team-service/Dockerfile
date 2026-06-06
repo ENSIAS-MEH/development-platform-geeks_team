@@ -43,7 +43,7 @@ COPY src ./src
 # -B           : batch / non-interactive
 # clean        : removes leftover target/ from previous local builds
 #                that may have been bind-mounted in dev
-RUN mvn clean package -DskipTests -B
+RUN mvn clean package -Dmaven.test.skip=true -B
 
 # ──────────────────────────────────────────────────────────────────
 # STAGE 3 — Extract Spring Boot layered JAR

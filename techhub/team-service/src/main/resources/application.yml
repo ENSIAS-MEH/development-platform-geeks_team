@@ -1,52 +1,49 @@
-# ════════════════════════════════════════════════
-#  TechHub — Team Service
-#  application.yml  (base / common config)
-# ════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════
+#  TechHub — Team Service  |  application.yml  (base / common)
+#  Owner: Member 3  |  Port: 8084 (governance §2.3)
+# ══════════════════════════════════════════════════════════════════
 
 spring:
 
   application:
     name: team-service
 
-  # Disable mail auto-configuration in local dev (we don't send emails from local)
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  # ── Disable mail in base config; enable only when MAIL_USERNAME is set ──
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.mail.MailAutoConfiguration
 
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
-
-  # ── PostgreSQL + HikariCP ──────────────────────
+  # ── PostgreSQL + HikariCP ─────────────────────────────────────────
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:team_db}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    username: ${DB_USERNAME:team_user}
+    password: ${DB_PASSWORD:team_pass}
     driver-class-name: org.postgresql.Driver
 
     hikari:
-      # Pool sizing — tuned for microservice workload
-      minimum-idle: 5
-      maximum-pool-size: 20
-      idle-timeout: 300000          # 5 min
-      connection-timeout: 20000     # 20 s
-      max-lifetime: 1200000         # 20 min
-      keepalive-time: 60000         # 1 min
       pool-name: TeamServiceHikariPool
-      # Diagnostics
+      minimum-idle:          ${HIKARI_MINIMUM_IDLE:5}
+      maximum-pool-size:     ${HIKARI_MAXIMUM_POOL_SIZE:20}
+      idle-timeout:          ${HIKARI_IDLE_TIMEOUT_MS:300000}
+      connection-timeout:    ${HIKARI_CONNECTION_TIMEOUT_MS:20000}
+      max-lifetime:          ${HIKARI_MAX_LIFETIME_MS:1200000}
+      keepalive-time:        60000
       leak-detection-threshold: 15000
-      # PostgreSQL tuning
       data-source-properties:
         cachePrepStmts: true
         prepStmtCacheSize: 250
         prepStmtCacheSqlLimit: 2048
         useServerPrepStmts: true
 
-  # ── JPA / Hibernate ───────────────────────────
+  # ── JPA / Hibernate ───────────────────────────────────────────────
   jpa:
     hibernate:
-      ddl-auto: create                   # Hibernate creates schema from @Entity annotations
-    show-sql: false                      # override to true in dev profile only
-    open-in-view: false                  # prevent accidental lazy-load anti-pattern
+      ddl-auto: validate        # schema.sql owns DDL — Hibernate only validates
+    show-sql: false
+    open-in-view: false         # prevent lazy-load N+1 across HTTP boundary
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -56,44 +53,51 @@ spring:
           batch_size: 25
           order_inserts: true
           order_updates: true
+        # Second-level cache via Redis (bonus requirement)
         cache:
-          use_second_level_cache: false
+          use_second_level_cache: false   # enabled per-profile (docker/k8s)
           use_query_cache: false
           region:
             factory_class: org.hibernate.cache.internal.NoCachingRegionFactory
 
-  # ── SQL initialization ────────────────────────
+  # ── SQL initialization (schema.sql + data.sql) ────────────────────
   sql:
     init:
-      mode: never
+      mode: always              # overridden to 'never' in docker profile
+      schema-locations: classpath:schema.sql
+      data-locations:   classpath:data.sql
       encoding: UTF-8
 
-  # ── Redis (second-level cache + session store) ─
+  # ── Redis ─────────────────────────────────────────────────────────
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host:     ${REDIS_HOST:localhost}
+      port:     ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
-      timeout: 2000ms
-      connect-timeout: 1000ms
+      timeout:          2000ms
+      connect-timeout:  1000ms
       lettuce:
         pool:
-          enabled: true
+          enabled:  true
           max-active: 16
-          max-idle: 8
-          min-idle: 2
-          max-wait: 1000ms
+          max-idle:   8
+          min-idle:   2
+          max-wait:   1000ms
           time-between-eviction-runs: 30s
-      # Key expiry defaults (seconds)
-      default-ttl: 3600             # 1 hour
 
-  # ── Kafka ──────────────────────────────────────
+  # ── Kafka ─────────────────────────────────────────────────────────
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    topics:
+      team-created: ${KAFKA_TOPIC_TEAM_CREATED:team-created}
+      team-invited: ${KAFKA_TOPIC_TEAM_INVITED:team-invited}
+      team-joined:  ${KAFKA_TOPIC_TEAM_JOINED:team-joined}
+      team-full:    ${KAFKA_TOPIC_TEAM_FULL:team-full}
+      team-left:    ${KAFKA_TOPIC_TEAM_LEFT:team-left}
     producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      key-serializer:   org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all                          # strongest durability guarantee
+      acks: all
       retries: 3
       properties:
         enable.idempotence: true
@@ -102,55 +106,33 @@ spring:
     consumer:
       group-id: team-service-group
       auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      key-deserializer:   org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "com.techhub.*"
-    # Topic definitions (auto-created in dev; pre-created in prod)
-    topics:
-      team-created: team-created
-      team-invited: team-invited
-      team-joined: team-joined
-      team-full: team-full
-      team-left: team-left
 
-  # ── Mail (invitation emails via Notification Service) ──
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-        debug: false
-
-  # ── Scheduling ────────────────────────────────
+  # ── Scheduler ─────────────────────────────────────────────────────
   task:
     scheduling:
       pool:
         size: 4
 
-# ── Server ─────────────────────────────────────
+# ── Server (port 8084 — governance §2.3) ──────────────────────────
 server:
-  port: ${SERVER_PORT:8083}
+  port: ${SERVER_PORT:8084}
   servlet:
     context-path: /api
   error:
-    include-message: never              # never leak stack traces
+    include-message:        never
     include-binding-errors: never
-    include-stacktrace: never
-    include-exception: false
+    include-stacktrace:     never
+    include-exception:      false
   compression:
     enabled: true
     mime-types: application/json,text/plain
     min-response-size: 1024
 
-# ── Actuator ───────────────────────────────────
+# ── Actuator (governance §14.1) ───────────────────────────────────
 management:
   endpoints:
     web:
@@ -160,30 +142,35 @@ management:
   endpoint:
     health:
       show-details: when-authorized
-  metrics:
-    export:
-      prometheus:
-        enabled: true
+      probes:
+        enabled: true     # /actuator/health/liveness + /readiness for K8s
+  prometheus:
+    metrics:
+      export:
+        enabled: ${PROMETHEUS_ENABLED:true}
 
-# ── JWT (shared secret pulled from env/vault) ──
+# ── JWT ───────────────────────────────────────────────────────────
 security:
   jwt:
-    # Local dev placeholder 32-char secret (DO NOT USE IN PRODUCTION)
-    secret: ${JWT_SECRET:0123456789ABCDEF0123456789ABCDEF}
-    expiration-ms: ${JWT_EXPIRATION_MS:86400000}   # 24 h
+    secret:         ${JWT_SECRET:0123456789ABCDEF0123456789ABCDEF}
+    expiration-ms:  ${JWT_EXPIRATION_MS:86400000}
 
-# ── Custom app properties ──────────────────────
+# ── App custom properties ─────────────────────────────────────────
 app:
   invitation:
-    expiry-hours: 48
-    scheduler-rate-ms: 60000           # run every 60 s
+    expiry-hours:       ${INVITATION_EXPIRY_HOURS:48}
+    scheduler-rate-ms:  ${INVITATION_SCHEDULER_RATE_MS:60000}
   team:
-    default-max-members: 10
+    default-max-members: ${TEAM_DEFAULT_MAX_MEMBERS:10}
+  redis:
+    ttl:
+      teams:       ${REDIS_TTL_TEAMS:1800}
+      members:     ${REDIS_TTL_TEAM_MEMBERS:900}
+      invitations: ${REDIS_TTL_INVITATIONS:300}
   cors:
-    # include Vite dev server (default 5173) and local frontend
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
 
-# ── Logging ────────────────────────────────────
+# ── Logging ───────────────────────────────────────────────────────
 logging:
   level:
     root: INFO
@@ -191,4 +178,4 @@ logging:
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
