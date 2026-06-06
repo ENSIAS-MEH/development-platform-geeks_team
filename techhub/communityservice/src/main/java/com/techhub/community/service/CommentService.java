@@ -1,5 +1,6 @@
 package com.techhub.community.service;
 
+import com.techhub.community.dto.CommentAddedEvent;
 import com.techhub.community.dto.CommentRequest;
 import com.techhub.community.dto.CommentResponse;
 import com.techhub.community.entity.Comment;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,6 +29,7 @@ public class CommentService {
     private final PostRepository postRepository;
     private final PostService postService;
     private final GroupMemberRepository memberRepository;
+    private final KafkaEventProducer kafkaEventProducer;
 
     private static final int MAX_NESTING_DEPTH = 2;
 
@@ -65,6 +68,16 @@ public class CommentService {
 
         // Atomic increment of comment_count on the post
         postRepository.incrementCommentCount(postId);
+
+        // Publish Kafka event
+        kafkaEventProducer.publishCommentAdded(CommentAddedEvent.builder()
+                .commentId(comment.getId())
+                .postId(comment.getPostId())
+                .authorId(comment.getAuthorId())
+                .content(comment.getContent())
+                .parentCommentId(comment.getParentCommentId())
+                .createdAt(comment.getCreatedAt())
+                .build());
 
         return toResponse(comment);
     }
