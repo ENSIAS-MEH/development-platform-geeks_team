@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: team-service-config
+  namespace: techhub
+  labels:
+    app: team-service
+data:
+  # ── Server ─────────────────────────────────────────────────────────────────
+  SERVER_PORT: "8083"
+  SPRING_PROFILES_ACTIVE: "k8s"
+  SPRING_APPLICATION_NAME: "team-service"
+  SPRING_AUTOCONFIGURE_EXCLUDE: "org.springframework.boot.autoconfigure.mail.MailAutoConfiguration"
+
+  # ── Database (PostgreSQL) ───────────────────────────────────────────────────
+  # DB_HOST resolves via K8s DNS: postgres-team.<namespace>.svc.cluster.local
+  DB_HOST: "postgres-team"
+  DB_PORT: "5432"
+  DB_NAME: "team_db"
+  DB_USERNAME: "team_user"
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+
+  # ── Kafka ───────────────────────────────────────────────────────────────────
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+
+  # ── JWT (non-sensitive metadata only) ──────────────────────────────────────
+  JWT_EXPIRATION_MS: "86400000"
+
+  # ── HikariCP connection pool ────────────────────────────────────────────────
+  HIKARI_MINIMUM_IDLE: "5"
+  HIKARI_MAXIMUM_POOL_SIZE: "20"
+  HIKARI_IDLE_TIMEOUT_MS: "300000"
+  HIKARI_CONNECTION_TIMEOUT_MS: "20000"
+  HIKARI_MAX_LIFETIME_MS: "1200000"
+
+  # ── Redis TTL (seconds) ─────────────────────────────────────────────────────
+  REDIS_TTL_TEAMS: "1800"
+  REDIS_TTL_TEAM_MEMBERS: "900"
+  REDIS_TTL_INVITATIONS: "300"
+
+  # ── Invitations ─────────────────────────────────────────────────────────────
+  INVITATION_EXPIRY_HOURS: "48"
+  INVITATION_SCHEDULER_RATE_MS: "60000"
+
+  # ── Team defaults ───────────────────────────────────────────────────────────
+  TEAM_DEFAULT_MAX_MEMBERS: "10"
+
+  # ── CORS ────────────────────────────────────────────────────────────────────
+  CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:5173"
+
+  # ── Kafka admin — non-fatal if broker unreachable at startup ────────────────
+  # KafkaAdmin.afterSingletonsInstantiated blocks context refresh by default.
+  # fail-fast=false lets the app start; producers/consumers retry in background.
+  SPRING_KAFKA_ADMIN_FAIL_FAST: "false"
+
+  # ── SQL init — skip schema.sql (base profile sets mode: always; docker/k8s override to never)
+  # Hibernate ddl-auto=create-drop manages schema for first-run K8s/Minikube tests.
+  SPRING_SQL_INIT_MODE: "never"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "create-drop"
+
+  # ── Observability — Prometheus ──────────────────────────────────────────────
+  PROMETHEUS_ENABLED: "true"
+
+  # ── Observability — OpenTelemetry / Tempo ───────────────────────────────────
+  # Endpoint targets the Tempo collector OTLP HTTP receiver (Step 4: Grafana stack).
+  # Set to a running Tempo instance; placeholder used until stack is deployed.
+  MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+  MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://tempo:4318/v1/traces"
+  OTEL_SERVICE_NAME: "team-service"

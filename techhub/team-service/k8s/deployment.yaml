@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: team-service
+  namespace: techhub
+  labels:
+    app: team-service
+    version: "1.0.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: team-service
+  template:
+    metadata:
+      labels:
+        app: team-service
+        version: "1.0.0"
+      annotations:
+        # Prometheus auto-discovery annotations (used by Prometheus operator or
+        # a scrape config that honours pod annotations).
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/api/actuator/prometheus"
+        prometheus.io/port: "8083"
+    spec:
+      # Allow graceful JVM shutdown before the pod is killed.
+      terminationGracePeriodSeconds: 30
+
+      containers:
+        - name: team-service
+          image: techhub/team-service:latest
+          # Never: rely on locally built image loaded into Minikube
+          # (use `minikube image load techhub/team-service:latest`).
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8083
+              protocol: TCP
+
+          # Inject every non-sensitive key from ConfigMap, then overlay secrets.
+          envFrom:
+            - configMapRef:
+                name: team-service-config
+            - secretRef:
+                name: team-service-secret
+
+          # ── Resource Requests & Limits ─────────────────────────────────────
+          # Requests: what K8s scheduler reserves.
+          # Limits:   matches docker-compose (memory: 512m, cpus: 1.0).
+          # The JVM flag -XX:+UseContainerSupport in the Dockerfile ensures
+          # the heap respects the cgroup memory limit (MaxRAMPercentage=75%).
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+
+          # ── Readiness Probe ────────────────────────────────────────────────
+          # K8s will not route traffic until this succeeds.
+          # Spring Boot + Actuator exposes /api/actuator/health (context-path: /api).
+          readinessProbe:
+            httpGet:
+              path: /api/actuator/health/readiness
+              port: 8083
+            initialDelaySeconds: 60   # JVM + Spring context startup time
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+
+          # ── Liveness Probe ─────────────────────────────────────────────────
+          # K8s will restart the container if this fails consecutively.
+          livenessProbe:
+            httpGet:
+              path: /api/actuator/health/liveness
+              port: 8083
+            initialDelaySeconds: 90   # Extra buffer: wait past readiness
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ── Security Context ───────────────────────────────────────────────
+          # Dockerfile creates a non-root user (teamservice / techhub group).
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            allowPrivilegeEscalation: false

@@ -24,6 +24,11 @@ import { NotificationsPage } from "./pages/notifications-page";
 import { MessagingPage } from "./pages/messaging-page";
 import { SettingsPage } from "./pages/settings-page";
 
+// Team Management pages
+import { TeamCreatePage } from "./pages/team-create-page";
+import { TeamDetailPage } from "./pages/team-detail-page";
+import { TeamEditPage } from "./pages/team-edit-page";
+
 // Event Organizer pages
 import { OrganizerDashboardPage } from "./pages/organizer-dashboard-page";
 import { CreateEventPage } from "./pages/create-event-page";
@@ -69,6 +74,9 @@ export const router = createBrowserRouter([
           { path: "projects/create", Component: CreateProjectPage },
           { path: "collaborators", Component: FindCollaboratorsPage },
           { path: "teams", Component: MyTeamsPage },
+          { path: "teams/create", Component: TeamCreatePage },
+          { path: "teams/:id", Component: TeamDetailPage },
+          { path: "teams/:id/edit", Component: TeamEditPage },
           { path: "communities", Component: CommunityGroupsPage },
           { path: "communities/:groupId", Component: GroupDetailPage },
           { path: "notifications", Component: NotificationsPage },
