@@ -37,4 +37,4 @@ build/
 Thumbs.db
 
 ### TechHub Frontend (separate repo, cloned inside) ###
-TechHub/
+/TechHub/
