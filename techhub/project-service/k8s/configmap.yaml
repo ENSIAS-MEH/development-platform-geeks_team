@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: project-service-config
+  namespace: devconnect
+data:
+  DB_HOST: "project-db"
+  DB_PORT: "5432"
+  DB_NAME: "project_db"
+  DB_USERNAME: "postgres"
+  REDIS_HOST: "project-redis"
+  REDIS_PORT: "6379"
+  KAFKA_BOOTSTRAP_SERVERS: "event-kafka:9092"
+  USER_SERVICE_URL: "http://userservice:8081"
