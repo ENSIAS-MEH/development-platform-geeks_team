@@ -1,0 +1,129 @@
+services:
+
+  # ─────────────────────────────────────────────────────────
+  # Kafka — KRaft mode (no Zookeeper), same image as team-service
+  # ─────────────────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: techhub-notif-kafka
+    ports:
+      - "9095:9092"     # container-to-container (host 9095 → container 9092)
+      - "9096:9094"     # host / IntelliJ access  (host 9096 → container 9094)
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9096
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - techhub-network
+
+  # ─────────────────────────────────────────────────────────
+  # Kafka UI — browse topics & messages in browser
+  # ─────────────────────────────────────────────────────────
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: techhub-notif-kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: techhub-notif-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - techhub-network
+
+  # ─────────────────────────────────────────────────────────
+  # PostgreSQL — notification database
+  # Port: 5434 on host (avoids conflict with team-service on 5433)
+  # ─────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: techhub-notification-db
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: techhub_notifications
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d techhub_notifications"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - techhub-network
+
+  # ─────────────────────────────────────────────────────────
+  # Notification Service
+  # ─────────────────────────────────────────────────────────
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: techhub-notification-service
+    ports:
+      - "8086:8086"
+    env_file:
+      - .env
+    environment:
+      # Override .env values to use docker-network hostnames
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DB_URL: jdbc:postgresql://postgres:5432/techhub_notifications
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - techhub-network
+    restart: on-failure
+
+  # ─────────────────────────────────────────────────────────
+  # Frontend — React/Vite built by Node, served by Nginx
+  # Accessible at http://localhost:3000
+  # ─────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: techhub-frontend
+    ports:
+      - "5173:3000"
+    depends_on:
+      - notification-service
+    networks:
+      - techhub-network
+    restart: on-failure
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # lets nginx proxy reach host ports (userservice, team-service)
+
+volumes:
+  kafka_data:
+  postgres_data:
+
+networks:
+  techhub-network:
+    driver: bridge
