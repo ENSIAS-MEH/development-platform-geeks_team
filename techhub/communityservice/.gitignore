@@ -38,3 +38,6 @@ Thumbs.db
 
 ### TechHub Frontend (separate repo, cloned inside) ###
 /TechHub/
+# Kubernetes secrets
+secret.yaml
+*.secret.yaml
