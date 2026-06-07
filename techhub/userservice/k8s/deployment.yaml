@@ -22,7 +22,7 @@ spec:
           command: ['sh', '-c', 'until nc -z redis-master 6379; do echo waiting for redis; sleep 3; done']
       containers:
         - name: userservice
-          image: alaelb/userservice:f8563bb3185c4802d0cd888994c5e3363b408c07
+          image: alaelb/userservice:b9e616146b06deeecb556763755c849492f2eacc
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
