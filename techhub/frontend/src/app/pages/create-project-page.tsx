@@ -1,16 +1,30 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { X } from "lucide-react";
+import {
+  createProject,
+  updateProject,
+  uiTypeToProjectTypeApi,
+  ProjectApiError,
+} from "../services/project-api";
 
 export function CreateProjectPage() {
+  const navigate = useNavigate();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [projectType, setProjectType] = useState("Open Source");
+  const [githubUrl, setGithubUrl] = useState("");
   const [techStack, setTechStack] = useState<string[]>(["React", "Node.js"]);
   const [skillsNeeded, setSkillsNeeded] = useState<string[]>(["Frontend", "Backend"]);
   const [newTech, setNewTech] = useState("");
   const [newSkill, setNewSkill] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const addTech = () => {
     if (newTech && !techStack.includes(newTech)) {
@@ -26,6 +40,47 @@ export function CreateProjectPage() {
     }
   };
 
+  const buildPayload = () => {
+    if (!title.trim()) throw new Error("Project title is required");
+
+    return {
+      title: title.trim(),
+      description: description.trim() || undefined,
+      type: uiTypeToProjectTypeApi(projectType),
+      technologies: techStack.length ? techStack : undefined,
+      skillsNeeded: skillsNeeded.length ? skillsNeeded : undefined,
+      githubUrl: githubUrl.trim() || undefined,
+    };
+  };
+
+  const handleSave = async (publish: boolean) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const payload = buildPayload();
+      const created = await createProject(payload);
+      if (!publish) {
+        await updateProject(created.id, { status: "IN_PROGRESS" });
+      }
+      navigate(`/projects/${created.id}`);
+    } catch (err) {
+      if (err instanceof ProjectApiError) {
+        setError(err.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Failed to save project");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSave(true);
+  };
+
   return (
     <div className="p-8">
       <div className="max-w-3xl mx-auto">
@@ -33,13 +88,16 @@ export function CreateProjectPage() {
         <p className="text-lg text-[#717182] mb-8">Share your idea and find collaborators</p>
 
         <div className="bg-white rounded-xl p-8 border border-[#BAC7CC]/30 shadow-sm">
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={onSubmit}>
             <div>
               <Label htmlFor="title">Project Title *</Label>
               <Input
                 id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g., AI-Powered Study Assistant"
                 className="mt-1.5 bg-[#F0F4F8] border-[#BAC7CC]/30"
+                required
               />
             </div>
 
@@ -47,6 +105,8 @@ export function CreateProjectPage() {
               <Label htmlFor="description">Description *</Label>
               <Textarea
                 id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe your project, its goals, and what makes it unique..."
                 rows={6}
                 className="mt-1.5 bg-[#F0F4F8] border-[#BAC7CC]/30"
@@ -113,45 +173,49 @@ export function CreateProjectPage() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="status">Project Status</Label>
-                <select
-                  id="status"
-                  className="mt-1.5 w-full rounded-md border border-[#BAC7CC]/30 bg-[#F0F4F8] px-3 py-2"
-                >
-                  <option>Planning</option>
-                  <option>In Progress</option>
-                  <option>Open to Contributors</option>
-                  <option>Beta Testing</option>
-                </select>
-              </div>
-
-              <div>
-                <Label htmlFor="teamSize">Team Size Sought</Label>
-                <Input
-                  id="teamSize"
-                  type="number"
-                  placeholder="5"
-                  className="mt-1.5 bg-[#F0F4F8] border-[#BAC7CC]/30"
-                />
-              </div>
+            <div>
+              <Label htmlFor="status">Project Type</Label>
+              <select
+                id="status"
+                value={projectType}
+                onChange={(e) => setProjectType(e.target.value)}
+                className="mt-1.5 w-full rounded-md border border-[#BAC7CC]/30 bg-[#F0F4F8] px-3 py-2"
+              >
+                <option>Startup Idea</option>
+                <option>Open Source</option>
+                <option>Student Project</option>
+                <option>Hackathon Project</option>
+              </select>
             </div>
 
             <div>
               <Label htmlFor="github">GitHub Repository (optional)</Label>
               <Input
                 id="github"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
                 placeholder="https://github.com/username/repo"
                 className="mt-1.5 bg-[#F0F4F8] border-[#BAC7CC]/30"
               />
             </div>
 
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+
             <div className="flex gap-4 pt-4">
-              <Button type="submit" className="bg-[#56B2BB] hover:bg-[#56B2BB]/90 text-white flex-1">
-                Publish Project
+              <Button
+                type="submit"
+                disabled={loading}
+                className="bg-[#56B2BB] hover:bg-[#56B2BB]/90 text-white flex-1"
+              >
+                {loading ? "Saving..." : "Publish Project"}
               </Button>
-              <Button type="button" variant="outline" className="border-[#BAC7CC]/30">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={loading}
+                className="border-[#BAC7CC]/30"
+                onClick={() => handleSave(false)}
+              >
                 Save as Draft
               </Button>
             </div>

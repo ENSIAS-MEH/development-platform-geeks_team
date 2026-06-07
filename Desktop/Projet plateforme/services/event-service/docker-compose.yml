@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5433:5432"
+      - "5436:5432"
     volumes:
       - event_postgres_data:/var/lib/postgresql/data
 
@@ -15,7 +15,7 @@ services:
     image: redis:7-alpine
     container_name: event-redis
     ports:
-      - "6379:6379"
+      - "6381:6379"
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
