@@ -6,11 +6,14 @@ import { Mail, Github, Linkedin, ExternalLink, MapPin, Calendar, Edit, Loader2 }
 import { useState } from "react";
 import { useEffect } from "react";
 import { userService } from "../services/userService";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
+import { searchEvents, formatEventDateRange } from "../services/event-api";
+import type { EventResponseDto } from "../services/event-api";
 
 
 export  function MyProfilePage() {
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [registeredEvents, setRegisteredEvents] = useState<EventResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +23,13 @@ export  function MyProfilePage() {
         setLoading(true);
         const data = await userService.getMyProfile();
         setUserInfo(data);
+
+        try {
+          const page = await searchEvents({ size: 100 });
+          setRegisteredEvents(page.content.filter((e) => e.userRegistered));
+        } catch {
+          setRegisteredEvents([]);
+        }
       } catch (err: any) {
         setError(err.response?.data?.message || "Failed to load profile");
       } finally {
@@ -56,7 +66,7 @@ export  function MyProfilePage() {
     ? userInfo.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
-  const skills =userInfo.skills;
+  const skills =(userInfo.skills || []);
   
   const projects = [
     {
@@ -77,11 +87,7 @@ export  function MyProfilePage() {
     },
   ];
 
-  const events = [
-    { name: "AI Innovation Hackathon 2026", date: "March 25-27, 2026", role: "Participant" },
-    { name: "Web3 Workshop Series", date: "April 5, 2026", role: "Attendee" },
-    { name: "Mobile Dev Conference", date: "April 15-16, 2026", role: "Speaker" },
-  ];
+  const events = registeredEvents;
 
   return (
     <div className="p-8">
@@ -180,24 +186,37 @@ export  function MyProfilePage() {
 
           <TabsContent value="events">
             <div className="bg-white rounded-xl border border-[#BAC7CC]/30 overflow-hidden">
-              <div className="divide-y divide-[#BAC7CC]/20">
-                {events.map((event, index) => (
-                  <div key={index} className="p-6 hover:bg-[#F0F4F8] transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-bold text-[#1D2233] mb-1">{event.name}</h3>
-                        <p className="text-sm text-[#717182] mb-2">{event.date}</p>
-                        <Badge className="bg-[#56B2BB]/10 text-[#56B2BB] hover:bg-[#56B2BB]/20">
-                          {event.role}
-                        </Badge>
+              {events.length === 0 ? (
+                <p className="p-6 text-[#717182]">
+                  No event registrations yet.{" "}
+                  <Link to="/explore/events" className="text-[#56B2BB] hover:underline">
+                    Browse events
+                  </Link>
+                </p>
+              ) : (
+                <div className="divide-y divide-[#BAC7CC]/20">
+                  {events.map((event) => (
+                    <div key={event.id} className="p-6 hover:bg-[#F0F4F8] transition-colors">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="font-bold text-[#1D2233] mb-1">{event.title}</h3>
+                          <p className="text-sm text-[#717182] mb-2">
+                            {formatEventDateRange(event.startDate, event.endDate)}
+                          </p>
+                          <Badge className="bg-[#56B2BB]/10 text-[#56B2BB] hover:bg-[#56B2BB]/20">
+                            Registered
+                          </Badge>
+                        </div>
+                        <Link to={`/events/${event.id}`}>
+                          <Button variant="ghost" size="sm" className="text-[#56B2BB]">
+                            View Details
+                          </Button>
+                        </Link>
                       </div>
-                      <Button variant="ghost" size="sm" className="text-[#56B2BB]">
-                        View Details
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
 

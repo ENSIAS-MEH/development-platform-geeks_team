@@ -34,10 +34,15 @@ export function LoginPage() {
       await authService.login({ email: loginEmail, password: loginPassword })
       navigate("/dashboard")    // redirect on success
     } catch (error: any) {
-      // Show the message from your ErrorResponse DTO
-      setLoginError(
-        error.response?.data?.message || "Invalid email or password"
-      )
+      if (!error.response) {
+        setLoginError(
+          "Cannot reach the server. Start user-service on port 8080, then restart the frontend dev server."
+        )
+      } else {
+        setLoginError(
+          error.response?.data?.message || "Invalid email or password"
+        )
+      }
     } finally {
       setLoginLoading(false)
     }
@@ -53,9 +58,15 @@ export function LoginPage() {
       await authService.register({ name, email: registerEmail, password: registerPassword, role })
       navigate("/dashboard")
     } catch (error: any) {
-      setRegisterError(
-        error.response?.data?.message || "Registration failed. Please try again."
-      )
+      if (!error.response) {
+        setRegisterError(
+          "Cannot reach the server. Start user-service on port 8080, then restart the frontend dev server."
+        )
+      } else {
+        setRegisterError(
+          error.response?.data?.message || "Registration failed. Please try again."
+        )
+      }
     } finally {
       setRegisterLoading(false)
     }
@@ -134,10 +145,10 @@ export function LoginPage() {
                 </div>
               </div>
               <div className="mt-6 grid grid-cols-2 gap-4">
-                <Button variant="outline" className="border-[#BAC7CC]/30">
+                <Button onClick={() => window.location.href = 'http://localhost:8080/oauth2/authorization/github'} variant="outline" className="border-[#BAC7CC]/30">
                   <Github className="w-5 h-5 mr-2" />GitHub
                 </Button>
-                <Button variant="outline" className="border-[#BAC7CC]/30">
+                <Button onClick={() => window.location.href = 'http://localhost:8080/oauth2/authorization/google'} variant="outline" className="border-[#BAC7CC]/30">
                   <Mail className="w-5 h-5 mr-2" />Google
                 </Button>
               </div>
@@ -227,10 +238,10 @@ export function LoginPage() {
                 </div>
               </div>
               <div className="mt-6 grid grid-cols-2 gap-4">
-                <Button variant="outline" className="border-[#BAC7CC]/30">
+                <Button onClick={() => window.location.href = 'http://localhost:8080/oauth2/authorization/github'} variant="outline" className="border-[#BAC7CC]/30">
                   <Github className="w-5 h-5 mr-2" />GitHub
                 </Button>
-                <Button variant="outline" className="border-[#BAC7CC]/30">
+                <Button onClick={() => window.location.href = 'http://localhost:8080/oauth2/authorization/google'} variant="outline" className="border-[#BAC7CC]/30">
                   <Mail className="w-5 h-5 mr-2" />Google
                 </Button>
               </div>

@@ -8,6 +8,7 @@ import { HomePage } from "./pages/home-page";
 import { ExploreEventsPage } from "./pages/explore-events-page";
 import { ExploreProjectsPage } from "./pages/explore-projects-page";
 import { LoginPage } from "./pages/login-page";
+import AuthCallBack from "./pages/AuthCallBack";
 
 // Authenticated Developer/Student pages
 import { DashboardPage } from "./pages/dashboard-page";
@@ -26,9 +27,12 @@ import { SettingsPage } from "./pages/settings-page";
 // Event Organizer pages
 import { OrganizerDashboardPage } from "./pages/organizer-dashboard-page";
 import { CreateEventPage } from "./pages/create-event-page";
+import { EditEventPage } from "./pages/edit-event-page";
 import { ManageParticipantsPage } from "./pages/manage-participants-page";
 import { TeamFormationPage } from "./pages/team-formation-page";
 import { EventAnalyticsPage } from "./pages/event-analytics-page";
+import { PublicProfilePage } from "./pages/PublicProfilePage";
+
 
 export const router = createBrowserRouter([
   {
@@ -37,17 +41,22 @@ export const router = createBrowserRouter([
     children: [
       // Public pages
       { index: true, Component: HomePage },
+      
       { path: "explore/events", Component: ExploreEventsPage },
       { path: "explore/projects", Component: ExploreProjectsPage },
       { path: "events/:id", Component: EventDetailPage },
       { path: "projects/:id", Component: ProjectDetailPage },
+      // auth fallback
+      { path: "auth/callback", Component: AuthCallBack },
       
+      { path: "users/:id", Component: PublicProfilePage },
       // Auth
       {
         path: "auth",
         Component: AuthLayout,
         children: [
           { path: "login", Component: LoginPage },
+
         ],
       },
       
@@ -70,6 +79,7 @@ export const router = createBrowserRouter([
           // Event Organizer pages
           { path: "organizer", Component: OrganizerDashboardPage },
           { path: "organizer/events/create", Component: CreateEventPage },
+          { path: "organizer/events/:id/edit", Component: EditEventPage },
           { path: "organizer/events/:id/participants", Component: ManageParticipantsPage },
           { path: "organizer/events/:id/teams", Component: TeamFormationPage },
           { path: "organizer/events/:id/analytics", Component: EventAnalyticsPage },

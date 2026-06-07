@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventSpecifications.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">event-service</a> &gt; <a href="index.source.html" class="el_package">com.devconnect.eventservice.repository</a> &gt; <span class="el_source">EventSpecifications.java</span></div><h1>EventSpecifications.java</h1><pre class="source lang-java linenums">package com.devconnect.eventservice.repository;
+
+import com.devconnect.eventservice.entity.Event;
+import com.devconnect.eventservice.enums.EventStatus;
+import com.devconnect.eventservice.enums.EventType;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/** Dynamic JPA specifications for event search (avoids PostgreSQL null-parameter bugs). */
+public final class EventSpecifications {
+
+    private EventSpecifications() {}
+
+    public static Specification&lt;Event&gt; withType(EventType type) {
+<span class="nc bnc" id="L17" title="All 2 branches missed.">        return (root, query, cb) -&gt; type == null ? cb.conjunction() : cb.equal(root.get(&quot;type&quot;), type);</span>
+    }
+
+    public static Specification&lt;Event&gt; withStatus(EventStatus status) {
+<span class="nc bnc" id="L21" title="All 2 branches missed.">        return (root, query, cb) -&gt; status == null ? cb.conjunction() : cb.equal(root.get(&quot;status&quot;), status);</span>
+    }
+
+    public static Specification&lt;Event&gt; withOrganizerId(UUID organizerId) {
+<span class="nc" id="L25">        return (root, query, cb) -&gt;</span>
+<span class="nc bnc" id="L26" title="All 2 branches missed.">            organizerId == null ? cb.conjunction() : cb.equal(root.get(&quot;organizerId&quot;), organizerId);</span>
+    }
+
+    public static Specification&lt;Event&gt; withKeyword(String keyword) {
+<span class="nc" id="L30">        return (root, query, cb) -&gt; {</span>
+<span class="nc bnc" id="L31" title="All 4 branches missed.">            if (keyword == null || keyword.isBlank()) {</span>
+<span class="nc" id="L32">                return cb.conjunction();</span>
+            }
+<span class="nc" id="L34">            String pattern = &quot;%&quot; + keyword.toLowerCase() + &quot;%&quot;;</span>
+<span class="nc" id="L35">            return cb.like(cb.lower(root.get(&quot;title&quot;)), pattern);</span>
+        };
+    }
+
+    public static Specification&lt;Event&gt; withStartDateFrom(LocalDateTime dateFrom) {
+<span class="nc" id="L40">        return (root, query, cb) -&gt;</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            dateFrom == null ? cb.conjunction() : cb.greaterThanOrEqualTo(root.get(&quot;startDate&quot;), dateFrom);</span>
+    }
+
+    public static Specification&lt;Event&gt; withStartDateTo(LocalDateTime dateTo) {
+<span class="nc" id="L45">        return (root, query, cb) -&gt;</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            dateTo == null ? cb.conjunction() : cb.lessThanOrEqualTo(root.get(&quot;startDate&quot;), dateTo);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

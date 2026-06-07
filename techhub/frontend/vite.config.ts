@@ -24,16 +24,31 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/auth': {
-        target: 'http://127.0.0.1:8081',
+        target: 'http://127.0.0.1:8080',
         changeOrigin: true,
         secure: false,
       },
       '/api/users': {
-        target: 'http://127.0.0.1:8081',
+        target: 'http://127.0.0.1:8080',
         changeOrigin: true,
         secure: false,
       },
-      '/api': {
+      '/api/events': {
+        target: 'http://127.0.0.1:8082',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/projects': {
+        target: 'http://127.0.0.1:8083',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/groups': {
+        target: 'http://127.0.0.1:8085',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/posts': {
         target: 'http://127.0.0.1:8085',
         changeOrigin: true,
         secure: false,

@@ -4,6 +4,7 @@ package com.projtechhub.techhub.security;
  * @author pc
  **/
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -105,6 +106,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
+
+        } catch (ExpiredJwtException e) {
+            // Token expired — don't throw, just let the request continue unauthenticated
+            // Spring Security will return 401 because SecurityContextHolder was never set
+            log.debug("JWT token expired: {}", e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             // Any JWT parsing error (expired, malformed, wrong signature) lands here.

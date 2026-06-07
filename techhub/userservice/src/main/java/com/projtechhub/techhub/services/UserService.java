@@ -1,6 +1,7 @@
 package com.projtechhub.techhub.services;
 
 import com.projtechhub.techhub.dto.request.ChangePasswordRequest;
+import com.projtechhub.techhub.dto.request.PrivacyRequest;
 import com.projtechhub.techhub.dto.request.SkillRequest;
 import com.projtechhub.techhub.dto.request.UpdateProfileRequest;
 import com.projtechhub.techhub.dto.response.ChangePasswordResponse;
@@ -10,6 +11,8 @@ import com.projtechhub.techhub.entities.Skill;
 import com.projtechhub.techhub.entities.User;
 import com.projtechhub.techhub.entities.UserProfile;
 import com.projtechhub.techhub.exceptions.ResourceNotFoundException;
+import com.projtechhub.techhub.kafka.event.UserPasswordChanged;
+import com.projtechhub.techhub.kafka.producer.MessageProducer;
 import com.projtechhub.techhub.repositories.SkillRepository;
 import com.projtechhub.techhub.repositories.UserProfileRepository;
 import com.projtechhub.techhub.repositories.UserRepository;
@@ -26,9 +29,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-
+//
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -37,7 +41,7 @@ public class UserService {
     private final SkillRepository skillRepository;
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
-    // ── Helper ────────────────────────────────────────────────────────────
+    private final MessageProducer messageProducer;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder
@@ -50,7 +54,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
     }
 
-    // ── GET /api/users/me ─────────────────────────────────────────────────
+    // ── GET /api/users/me
 
     @Transactional(readOnly = true)
     public UserProfileResponse getMyProfile() {
@@ -60,7 +64,7 @@ public class UserService {
         return buildUserProfileResponse(user, profile);
     }
 
-    // ── PUT /api/users/me ─────────────────────────────────────────────────
+    // ── PUT /api/users/me
 
     @Transactional
     @CacheEvict(cacheNames = "users", key = "#result.id")
@@ -86,7 +90,7 @@ public class UserService {
         return buildUserProfileResponse(user, profile);
     }
 
-    // ── GET /api/users/{id} ───────────────────────────────────────────────
+    // ── GET /api/users/{id}
 
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = "users", key = "#id")
@@ -96,7 +100,7 @@ public class UserService {
         return buildUserResponse(user);
     }
 
-    // ── GET /api/users/search ─────────────────────────────────────────────
+    // ── GET /api/users/search
 
     @Transactional(readOnly = true)
     public Page<UserResponse> searchBySkill(String skill, String level, int page, int size) {
@@ -106,7 +110,7 @@ public class UserService {
                 .map(this::buildUserResponse);
     }
 
-    // ── POST /api/users/me/skills ─────────────────────────────────────────
+    // ── POST /api/users/me/skills
     // Returns List<String> — just the updated full list of skill names
     // so the frontend can replace its local state in one shot
     private String normalizeSkillName(String name) {
@@ -139,7 +143,7 @@ public class UserService {
                 .map(Skill::getName)
                 .toList();
     }
-    // ── DELETE /api/users/me/skills/{skillId} ─────────────────────────────
+    // ── DELETE /api/users/me/skills/{skillId}
     // Returns updated list of skill names after deletion
 
     @Transactional
@@ -158,7 +162,7 @@ public class UserService {
                 .toList();
     }
 
-    // ── DTO builders ──────────────────────────────────────────────────────
+    // ── DTO builders
 
     public UserResponse buildUserResponse(User user) {
         // skills is just List<String> — names only
@@ -169,7 +173,7 @@ public class UserService {
         return UserResponse.builder()
                 .id(user.getId().toString())
                 .name(user.getDisplayName())
-                .email(user.getEmail())
+                .email(user.getShowEmail() != null && user.getShowEmail()? user.getEmail() : null)
                 .role(mapUserType(user.getUserType()))
                 .skills(skillNames)
                 .location(user.getLocation())
@@ -184,7 +188,7 @@ public class UserService {
     private UserProfileResponse buildUserProfileResponse(User user, UserProfile profile) {
         // Same as UserResponse but with extra profile fields
         // skills still List<String> — consistent with everywhere else
-        List<String> skillNames = user.getSkills() != null
+        List<String> skillNames = (user.getSkills() != null && !user.getSkills().isEmpty())
                 ? user.getSkills().stream().map(Skill::getName).toList()
                 : List.of();
 
@@ -192,6 +196,9 @@ public class UserService {
                 .id(user.getId().toString())
                 .name(user.getDisplayName())
                 .email(user.getEmail())
+                .showEmail(user.getShowEmail() != null ? user.getShowEmail() : false)  // include the setting so frontend can display the toggle state
+                .authProvider(user.getAuthProvider() != null ? user.getAuthProvider() : "local")
+
                 .role(mapUserType(user.getUserType()))
                 .bio(user.getBio())
                 .avatarUrl(user.getAvatarUrl())
@@ -239,9 +246,54 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
+        //create kafka event
+        UserPasswordChanged passwordChangedEvent = UserPasswordChanged.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("USER_PASSWORD_CHANGED")
+                .timestamp(Instant.now().toString())
+                .userId(user.getId())
+                .displayName(user.getDisplayName())
+                .email(user.getEmail())
+                .build();
+        // add kafka event
+        messageProducer.publishUserPasswordChangedEvent(passwordChangedEvent);
         return ChangePasswordResponse.builder()
                 .message("Password updated successfully")
                 .build();
     }
 
+    public void updatePrivacy(PrivacyRequest request) {
+        User user = getCurrentUser();
+        if (request.getShowEmail() != null) {
+            user.setShowEmail(request.getShowEmail());
+        }
+        userRepository.save(user);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return userRepository.findByEnabledTrue(pageable)
+                .map(this::buildUserResponse);
+    }
+
+
+//    public Page<UserSummaryDTO> getAllUsersExcept(String userEmail, int page, int size) {
+//        Pageable pageable = PageRequest.of(page, size);
+//        return userRepository.findAllExcept(userEmail, pageable)
+//                .map(this::mapToSummaryDTO); // Page has its own .map()
+//    }
+//
+//    private UserSummaryDTO mapToSummaryDTO(User u) {
+//        return UserSummaryDTO.builder()
+//                .id(u.getId())
+//                .name(u.getDisplayName())
+//                .userType(String.valueOf(u.getUserType()))
+//                .bio(u.getBio())
+//                .location(u.getLocation())
+//                .skills(u.getSkills())
+//                .email(Boolean.TRUE.equals(u.getShowEmail())? u.getEmail() : null)
+//                .build();
+//    }
 }
