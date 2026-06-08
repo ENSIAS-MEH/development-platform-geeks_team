@@ -8,7 +8,7 @@ spec:
 
   source:
     repoURL: https://github.com/ENSIAS-MEH/development-platform-geeks_team.git
-    targetRevision: main
+    targetRevision: userservice/cicd
     path: techhub/userservice/k8s
 
   destination:

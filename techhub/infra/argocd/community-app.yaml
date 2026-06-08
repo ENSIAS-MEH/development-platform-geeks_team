@@ -17,7 +17,7 @@ spec:
     # Replace REPO_URL with your actual Git repository URL
     repoURL: REPO_URL
     path: techhub/communityservice/k8s
-    targetRevision: main
+    targetRevision: userservice/cicd
 
   destination:
     server: https://kubernetes.default.svc
