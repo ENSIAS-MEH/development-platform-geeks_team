@@ -4,4 +4,3 @@ metadata:
   name: techhub
   labels:
     name: techhub
-    managed-by: manual

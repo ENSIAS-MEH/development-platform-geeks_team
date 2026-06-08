@@ -36,6 +36,8 @@ class CommentServiceTest {
     private PostService postService;
     @Mock
     private GroupMemberRepository memberRepository;
+    @Mock
+    private KafkaEventProducer kafkaEventProducer;
 
     @InjectMocks
     private CommentService commentService;

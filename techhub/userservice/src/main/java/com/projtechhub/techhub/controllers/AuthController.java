@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Handles authentication endpoints — all public, no JWT required.
+ * It Handles authentication endpoints — all public, no JWT required.
  * SecurityConfig permits /api/auth/** without authentication.
  */
 @RestController

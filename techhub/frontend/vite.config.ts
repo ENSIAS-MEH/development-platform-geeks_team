@@ -23,6 +23,7 @@ export default defineConfig({
   // ── Dev proxy ─────────────────────────────────────────────────────
   server: {
     proxy: {
+      // ── User service ───────────────────────────────────────────────
       '/api/auth': {
         target: 'http://127.0.0.1:8080',
         changeOrigin: true,
@@ -33,13 +34,31 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      // Notification service — prefix stripped before forwarding
+      // ── Event service ──────────────────────────────────────────────
+      '/api/events': {
+        target: 'http://127.0.0.1:8082',
+        changeOrigin: true,
+        secure: false,
+      },
+      // ── Community service ──────────────────────────────────────────
+      '/api/groups': {
+        target: 'http://127.0.0.1:8085',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/posts': {
+        target: 'http://127.0.0.1:8085',
+        changeOrigin: true,
+        secure: false,
+      },
+      // ── Notification service — prefix stripped before forwarding ───
       '/notifications': {
         target: 'http://127.0.0.1:8086',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/notifications/, ''),
       },
+      // ── Team service (catch-all for /api/teams, /api/invitations…) ─
       '/api': {
         target: 'http://127.0.0.1:8083',
         changeOrigin: true,

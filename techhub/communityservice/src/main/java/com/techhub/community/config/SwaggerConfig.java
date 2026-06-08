@@ -22,13 +22,13 @@ public class SwaggerConfig {
                                 "REST API for managing community groups, posts, comments and member interactions within the TechHub platform.")
                         .version("1.0.0")
                         .contact(new Contact()
-                                .name("TechHub Team – Member 4")
+                                .name("TechHub Team")
                                 .email("community@techhub.dev"))
                         .license(new License()
                                 .name("MIT License")
                                 .url("https://opensource.org/licenses/MIT")))
                 .servers(List.of(
-                        new Server().url("http://localhost:8085").description("Local dev"),
-                        new Server().url("http://community-service:8085").description("Docker network")));
+                        new Server().url("http://localhost:8084").description("Local dev"),
+                        new Server().url("http://community-service:8084").description("K8s network")));
     }
 }

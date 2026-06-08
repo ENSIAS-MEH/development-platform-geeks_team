@@ -5,7 +5,6 @@ import com.techhub.community.dto.PostResponse;
 import com.techhub.community.entity.Group;
 import com.techhub.community.entity.Post;
 import com.techhub.community.enums.PostType;
-import com.techhub.community.enums.Topic;
 import com.techhub.community.exception.ResourceNotFoundException;
 import com.techhub.community.exception.UnauthorizedException;
 import com.techhub.community.repository.GroupMemberRepository;
@@ -17,8 +16,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,6 +40,8 @@ class PostServiceTest {
     private GroupMemberRepository memberRepository;
     @Mock
     private GroupService groupService;
+    @Mock
+    private KafkaEventProducer kafkaEventProducer;
 
     @InjectMocks
     private PostService postService;
@@ -88,6 +95,7 @@ class PostServiceTest {
             assertThat(response).isNotNull();
             assertThat(response.getTitle()).isEqualTo("Sample Post");
             verify(postRepository).save(any(Post.class));
+            verify(kafkaEventProducer).publishPostCreated(any());
         }
 
         @Test
@@ -138,13 +146,64 @@ class PostServiceTest {
     class UpvotePost {
 
         @Test
-        @DisplayName("should call atomic increment")
+        @DisplayName("should call atomic increment when post exists")
         void shouldUpvote() {
             when(postRepository.findById(postId)).thenReturn(Optional.of(samplePost));
 
             postService.upvotePost(postId);
 
             verify(postRepository).incrementUpvotes(postId);
+        }
+
+        @Test
+        @DisplayName("should throw ResourceNotFoundException when upvoting non-existent post")
+        void shouldThrowWhenUpvotingNonExistentPost() {
+            UUID unknownId = UUID.randomUUID();
+            when(postRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> postService.upvotePost(unknownId))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Post not found");
+        }
+    }
+
+    @Nested
+    @DisplayName("getPopularPosts")
+    class GetPopularPosts {
+
+        @Test
+        @DisplayName("should return posts sorted by popularity (upvotes descending)")
+        void shouldReturnPostsSortedByPopularity() {
+            Post post1 = Post.builder()
+                    .id(UUID.randomUUID()).groupId(groupId).authorId(authorId)
+                    .title("Low Votes").content("C1").type(PostType.DISCUSSION)
+                    .upvotes(5).commentCount(0).isPinned(false)
+                    .createdAt(Instant.now()).updatedAt(Instant.now()).build();
+
+            Post post2 = Post.builder()
+                    .id(UUID.randomUUID()).groupId(groupId).authorId(authorId)
+                    .title("High Votes").content("C2").type(PostType.DISCUSSION)
+                    .upvotes(100).commentCount(0).isPinned(false)
+                    .createdAt(Instant.now()).updatedAt(Instant.now()).build();
+
+            Post post3 = Post.builder()
+                    .id(UUID.randomUUID()).groupId(groupId).authorId(authorId)
+                    .title("Medium Votes").content("C3").type(PostType.DISCUSSION)
+                    .upvotes(50).commentCount(0).isPinned(false)
+                    .createdAt(Instant.now()).updatedAt(Instant.now()).build();
+
+            // Simulate DB returning them in descending order
+            List<Post> sortedPosts = Arrays.asList(post2, post3, post1);
+            Page<Post> page = new PageImpl<>(sortedPosts, PageRequest.of(0, 10), 3);
+
+            when(postRepository.findPopularPosts(any(Pageable.class))).thenReturn(page);
+
+            Page<PostResponse> result = postService.getPopularPosts(0, 10);
+
+            assertThat(result.getContent()).hasSize(3);
+            assertThat(result.getContent().get(0).getUpvotes()).isEqualTo(100);
+            assertThat(result.getContent().get(1).getUpvotes()).isEqualTo(50);
+            assertThat(result.getContent().get(2).getUpvotes()).isEqualTo(5);
         }
     }
 
