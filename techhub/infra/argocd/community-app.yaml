@@ -15,7 +15,7 @@ spec:
 
   source:
     # Replace REPO_URL with your actual Git repository URL
-    repoURL: REPO_URL
+    repoURL: https://github.com/ENSIAS-MEH/development-platform-geeks_team.git
     path: techhub/communityservice/k8s
     targetRevision: userservice/cicd
 
