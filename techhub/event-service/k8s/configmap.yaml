@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: event-service-config
-  namespace: devconnect
+  namespace: techhub
 data:
   DB_HOST: "event-db"
   DB_PORT: "5432"

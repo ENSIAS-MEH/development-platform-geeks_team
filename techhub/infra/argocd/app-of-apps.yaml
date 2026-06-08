@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: event-service
+  name: techhub-app-of-apps
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: 'https://github.com/your-username/development-platform-geeks_team.git'
     targetRevision: HEAD
-    path: Desktop/Projet plateforme/services/event-service/k8s
+    path: techhub/infra/argocd
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: devconnect
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
