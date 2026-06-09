@@ -256,7 +256,7 @@ graph TD
 | **Manager / Propriétaire** | Membre pouvant créer et gérer une équipe ou un événement |
 
 
-![Use case diagram](conception diagrams/use_case_diagram.png)
+![Use case diagram](https://github.com/ENSIAS-MEH/development-platform-geeks_team/blob/a2247ff92eaa805109dbf511e8ec3ef4209583c3/conception%20diagrams/use_case_diagram.png)
 
 
 ---
@@ -269,7 +269,7 @@ graph TD
 
 ### 7.3 Diagrammes de Séquence
 
-![Sequence diagram 1](conception diagrams/sequence_diagram.png)
+![Sequence diagram 1](https://github.com/ENSIAS-MEH/development-platform-geeks_team/blob/a2247ff92eaa805109dbf511e8ec3ef4209583c3/conception%20diagrams/sequence_diagram.png)
 
 
 
