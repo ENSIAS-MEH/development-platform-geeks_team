@@ -263,7 +263,7 @@ graph TD
 
 ### 7.2 Diagramme de Classes
 
-![class diagram](conception diagrams/class_diagram (1).png)
+![class diagram](https://github.com/ENSIAS-MEH/development-platform-geeks_team/blob/92054cace0414f5ab6502a37610cba950d247452/conception%20diagrams/class_diagram%20(1).png)
 
 
 
