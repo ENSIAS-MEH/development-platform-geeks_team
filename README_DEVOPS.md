@@ -157,9 +157,9 @@ TechHub possède **un workflow GitHub Actions par service**, déclenché uniquem
 
 Les pipelines Community Service et Userservice integrent Argocd : après le push de l'image Docker Hub, il **met à jour automatiquement le manifeste K8s** dans le dépôt, déclenchant la synchronisation ArgoCD :
 
-![UserserviceArgocd](images/userservice-argocd.png)
+![UserserviceArgocd](https://github.com/ENSIAS-MEH/development-platform-geeks_team/blob/e0844c6b525c7aeb510d3d4fa02afa6e2216c72c/devops%20screens/argocdui%20userservice%202.jpeg)
 
-![CommunityServiceArgocd](images/communityService-argocd.png)
+![CommunityServiceArgocd](https://github.com/ENSIAS-MEH/development-platform-geeks_team/blob/e0844c6b525c7aeb510d3d4fa02afa6e2216c72c/devops%20screens/argocdui%20communityservice.jpeg)
 
 
 
@@ -259,9 +259,9 @@ docker compose up -d
 
 ### Option B — Déploiement Kubernetes (Minikube)
 
-![userservicePods](images/userservicepods.png)
+![userservicePods](https://github.com/ENSIAS-MEH/development-platform-geeks_team/blob/e0844c6b525c7aeb510d3d4fa02afa6e2216c72c/devops%20screens/userservice%20pods.jpeg)
 
-![communitypods](images/communitypods.png)
+![communitypods](https://github.com/ENSIAS-MEH/development-platform-geeks_team/blob/e0844c6b525c7aeb510d3d4fa02afa6e2216c72c/devops%20screens/communityservice%20pods.jpeg)
 
 
 
