@@ -18,7 +18,7 @@ spring:
 
   sql:
     init:
-      mode: always
+      mode: never   # schema.sql has PostgreSQL-only syntax; Hibernate create-drop handles DDL
 
   # Disable Redis auto-config in unit tests
   autoconfigure:

@@ -2,39 +2,87 @@ name: Event Service CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - 'Desktop/Projet plateforme/services/event-service/**'
+      - 'techhub/event-service/**'
+      - '.github/workflows/event-service-ci.yml'
   pull_request:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - 'Desktop/Projet plateforme/services/event-service/**'
+      - 'techhub/event-service/**'
+
+concurrency:
+  group: event-service-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-test:
+
+  test:
+    name: Build & Test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
+          distribution: temurin
+          cache: maven
 
-      - name: Build and Test with Maven
+      - name: Build and test
+        working-directory: techhub/event-service
+        run: mvn clean test -B
+
+  build-and-push:
+    name: Build & Push Image
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lowercase image owner
         run: |
-          cd "Desktop/Projet plateforme/services/event-service"
-          mvn clean test
+          echo "IMAGE=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/event-service" >> $GITHUB_ENV
 
-      - name: Build Docker Image
-        run: |
-          cd "Desktop/Projet plateforme/services/event-service"
-          docker build -t devconnect/event-service:${{ github.sha }} .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # Push image and deployment manifest updates would go here in actual environment
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable=true
+          labels: |
+            org.opencontainers.image.title=event-service
+            org.opencontainers.image.description=TechHub Event Service
+            org.opencontainers.image.vendor=TechHub
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: techhub/event-service
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
