@@ -1,3 +1,9 @@
+# ── Terraform (from main branch) ──────────────────────────────────────────────
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate*
+tfplan
+
 # ── Secrets & local env — NEVER commit these ──────────────────────────────────
 .env
 .env.local

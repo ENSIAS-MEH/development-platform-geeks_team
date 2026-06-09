@@ -6,6 +6,8 @@ import com.projtechhub.techhub.dto.response.AuthResponse;
 import com.projtechhub.techhub.dto.response.UserResponse;
 import com.projtechhub.techhub.entities.*;
 import com.projtechhub.techhub.exceptions.EmailAlreadyExistsException;
+import com.projtechhub.techhub.kafka.event.UserRegistredEvent;
+import com.projtechhub.techhub.kafka.producer.MessageProducer;
 import com.projtechhub.techhub.repositories.*;
 import com.projtechhub.techhub.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +24,11 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Handles all authentication logic — registration, login, token refresh, logout.
+ * It Handles all authentication logic — registration, login, token refresh, logout.
  */
 @Service
 @RequiredArgsConstructor  // Lombok generates constructor — injects all final fields
@@ -40,8 +43,11 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final RedisTemplate<String, String> redisTemplate;
+    //add kafka message producer
+    private final MessageProducer messageProducer;
 
-    // ── Register ──────────────────────────────────────────────────────────
+
+    // ── Register ───────────────────────────────────────────────────────
 
     @Transactional  // if anything fails, the whole thing rolls back — no partial saves
     public AuthResponse register(RegisterRequest request) {
@@ -89,6 +95,17 @@ public class AuthService {
                 .build();
         userProfileRepository.save(profile);
 
+//        //add kafka event
+        UserRegistredEvent event = UserRegistredEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("user registered")
+                .timestamp(Instant.now().toString())
+                .userId(user.getId())
+                .role(request.getRole())
+                .email(user.getEmail())
+                .displayName(user.getDisplayName())
+                .build();
+        messageProducer.publishUserRegistredEvent(event);
         // 6. Generate tokens and return
         return buildAuthResponse(user);
     }

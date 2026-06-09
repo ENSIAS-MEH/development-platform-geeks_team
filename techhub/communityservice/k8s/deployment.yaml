@@ -1,0 +1,82 @@
+# ═══════════════════════════════════════════════════════════════
+#  Community Service – Kubernetes Deployment
+#  2 replicas, health probes, resource limits
+# ═══════════════════════════════════════════════════════════════
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: community-service
+  namespace: techhub
+  labels:
+    app: community-service
+    app.kubernetes.io/part-of: techhub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: community-service
+  template:
+    metadata:
+      labels:
+        app: community-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8084"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      containers:
+        - name: community-service
+          image: hafsaabbar1/community-service:0177fb7bd8bdea603c7b524febb1f0a45f775a70
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084
+              protocol: TCP
+
+          # ── Environment variables from ConfigMap ──────────────
+          envFrom:
+            - configMapRef:
+                name: community-service-config
+
+          # ── Environment variables from Secret ────────────────
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: community-service-secret
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: community-service-secret
+                  key: JWT_SECRET
+
+          # ── Resource requests & limits ───────────────────────
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+
+          # ── Readiness probe ──────────────────────────────────
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          # ── Liveness probe ───────────────────────────────────
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+
+      restartPolicy: Always
