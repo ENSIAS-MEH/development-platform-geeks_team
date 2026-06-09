@@ -308,8 +308,9 @@ echo "$(minikube ip) techhub.local" | sudo tee -a /etc/hosts
 kubectl get pods -n techhub -w
 
 ```
-**Remarque :**Lors de la phase de déploiement sur le cluster Kubernetes local (Minikube), nous avons été confrontés à un problème de saturation mémoire. Chaque microservice étant accompagné de ses propres instances Redis, PostgreSQL et Kafka, la consommation RAM globale du cluster s'est révélée très élevée. Or, Minikube impose une allocation RAM fixe définie au moment de sa configuration — et pour tester l'ensemble de la solution, il aurait fallu augmenter cette allocation. Le problème est que la mémoire de la machine hôte était elle-même occupée à plus de 80%, rendant toute augmentation impossible : ni la RAM allouée au cluster n'était suffisante pour faire tourner tous les pods, ni la machine hôte ne disposait de la marge nécessaire pour en allouer davantage.
+
 ---
+**Remarque :** Lors de la phase de déploiement sur le cluster Kubernetes local (Minikube), nous avons été confrontés à un problème de saturation mémoire. Chaque microservice étant accompagné de ses propres instances Redis, PostgreSQL et Kafka, la consommation RAM globale du cluster s'est révélée très élevée. Or, Minikube impose une allocation RAM fixe définie au moment de sa configuration — et pour tester l'ensemble de la solution, il aurait fallu augmenter cette allocation. Le problème est que la mémoire de la machine hôte était elle-même occupée à plus de 80%, rendant toute augmentation impossible : ni la RAM allouée au cluster n'était suffisante pour faire tourner tous les pods, ni la machine hôte ne disposait de la marge nécessaire pour en allouer davantage.
 
 ### Option C — Déploiement GitOps avec ArgoCD
 
