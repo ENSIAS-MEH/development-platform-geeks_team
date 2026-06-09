@@ -239,7 +239,7 @@ graph LR
 ### Option A — Exécution Locale avec Docker Compose
 
 
-![Containers](images/dockercomposecontainers.png)
+![Containers](https://github.com/ENSIAS-MEH/development-platform-geeks_team/blob/2bccd0367a0a36be5a0443c9b894169dcff92f41/devops%20screens/all%20containers.jpeg)
 
 
 **Démarrage complet (infrastructure + services) :**
