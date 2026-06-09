@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: community-service
-          image: hafsaabbar1/community-service:0177fb7bd8bdea603c7b524febb1f0a45f775a70
+          image: hafsaabbar1/community-service:2efbc34259f43ea428e5b00c29aa6a2b966a1ebf
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8084
