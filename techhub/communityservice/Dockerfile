@@ -1,18 +1,19 @@
 # ═══════════════════════════════════════════════════════════════
-#  Community Service – Docker build (uses pre-built JAR)
+#  Community Service – Multi-stage build
 #  Port: 8084  •  Java 17  •  Non-root user
 # ═══════════════════════════════════════════════════════════════
 
+FROM maven:3.9-eclipse-temurin-17 AS builder
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline -B -q
+COPY src ./src
+RUN mvn clean package -DskipTests -B -q
+
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-
-# Create non-root user for security
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
-
-# Copy the built artifact (expected to be built by Maven on the host/runner)
-COPY target/community-service-*.jar app.jar
-
+COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8084
-
 ENTRYPOINT ["java", "-jar", "app.jar"]

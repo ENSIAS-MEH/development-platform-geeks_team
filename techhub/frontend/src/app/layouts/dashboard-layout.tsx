@@ -1,13 +1,14 @@
 import { Outlet, Link, useLocation } from "react-router";
-import { 
-  LayoutDashboard, 
-  User, 
-  FolderGit2, 
-  Users, 
-  UsersRound, 
-  Globe, 
-  Bell, 
-  MessageSquare, 
+import {
+  LayoutDashboard,
+  User,
+  FolderGit2,
+  Users,
+  UsersRound,
+  UserPlus,
+  Globe,
+  Bell,
+  MessageSquare,
   Settings,
   Calendar,
   BarChart3,
@@ -16,25 +17,30 @@ import {
 
 export function DashboardLayout() {
   const location = useLocation();
-  
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
-  
+
+  const isActive = (path: string, exact = false) =>
+    exact ? location.pathname === path : location.pathname === path || location.pathname.startsWith(path + '/');
+
   const navItems = [
-    { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard", exact: true },
     { path: "/dashboard/profile", icon: User, label: "My Profile" },
     { path: "/dashboard/projects/create", icon: FolderGit2, label: "Create Project" },
     { path: "/dashboard/collaborators", icon: Users, label: "Find Collaborators" },
-    { path: "/dashboard/teams", icon: UsersRound, label: "My Teams" },
     { path: "/dashboard/communities", icon: Globe, label: "Communities" },
     { path: "/dashboard/notifications", icon: Bell, label: "Notifications" },
     { path: "/dashboard/messages", icon: MessageSquare, label: "Messages" },
     { path: "/dashboard/settings", icon: Settings, label: "Settings" },
   ];
-  
+
+  const teamItems = [
+    { path: "/dashboard/teams", icon: UsersRound, label: "My Teams", exact: true },
+    { path: "/dashboard/teams/create", icon: UserPlus, label: "Create Team", exact: true },
+  ];
+
   const organizerItems = [
     { path: "/dashboard/organizer", icon: Calendar, label: "Organizer Dashboard" },
   ];
-  
+
   const adminItems = [
     { path: "/dashboard/admin", icon: Shield, label: "Admin Dashboard" },
     { path: "/dashboard/admin/analytics", icon: BarChart3, label: "Platform Analytics" },
@@ -61,7 +67,7 @@ export function DashboardLayout() {
                 key={item.path}
                 to={item.path}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isActive(item.path)
+                  isActive(item.path, item.exact)
                     ? "bg-[#56B2BB] text-white"
                     : "text-[#BAC7CC] hover:bg-[#0A0F22] hover:text-white"
                 }`}
@@ -71,7 +77,28 @@ export function DashboardLayout() {
               </Link>
             );
           })}
-          
+
+          <div className="pt-4 pb-2 px-3">
+            <div className="text-xs text-[#BAC7CC] uppercase tracking-wider">Teams</div>
+          </div>
+          {teamItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  isActive(item.path, item.exact)
+                    ? "bg-[#56B2BB] text-white"
+                    : "text-[#BAC7CC] hover:bg-[#0A0F22] hover:text-white"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+
           <div className="pt-4 pb-2 px-3">
             <div className="text-xs text-[#BAC7CC] uppercase tracking-wider">Organizer</div>
           </div>
@@ -82,7 +109,7 @@ export function DashboardLayout() {
                 key={item.path}
                 to={item.path}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isActive(item.path)
+                  isActive(item.path, false)
                     ? "bg-[#56B2BB] text-white"
                     : "text-[#BAC7CC] hover:bg-[#0A0F22] hover:text-white"
                 }`}
@@ -92,7 +119,7 @@ export function DashboardLayout() {
               </Link>
             );
           })}
-          
+
           <div className="pt-4 pb-2 px-3">
             <div className="text-xs text-[#BAC7CC] uppercase tracking-wider">Admin</div>
           </div>
@@ -103,7 +130,7 @@ export function DashboardLayout() {
                 key={item.path}
                 to={item.path}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isActive(item.path)
+                  isActive(item.path, false)
                     ? "bg-[#56B2BB] text-white"
                     : "text-[#BAC7CC] hover:bg-[#0A0F22] hover:text-white"
                 }`}

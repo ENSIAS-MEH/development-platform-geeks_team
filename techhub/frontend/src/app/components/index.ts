@@ -3,12 +3,12 @@
 
 // Layout Components
 export { Navbar } from './navbar';
-export { Footer } from './footer';
 
 // Card Components
 export { EventCard } from './event-card';
 export { ProjectCard } from './project-card';
 export { StatCard } from './stat-card';
+export { TeamCard } from './team-card';
 
 // UI Components (re-export commonly used ones)
 export { Button } from './ui/button';

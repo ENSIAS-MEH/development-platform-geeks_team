@@ -20,9 +20,10 @@ export default defineConfig({
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
 
-  // ── Dev proxy: forward /api → Community Service backend ──────────
+  // ── Dev proxy ─────────────────────────────────────────────────────
   server: {
     proxy: {
+      // ── User service ───────────────────────────────────────────────
       '/api/auth': {
         target: 'http://127.0.0.1:8080',
         changeOrigin: true,
@@ -33,16 +34,13 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // ── Event service ──────────────────────────────────────────────
       '/api/events': {
         target: 'http://127.0.0.1:8082',
         changeOrigin: true,
         secure: false,
       },
-      '/api/projects': {
-        target: 'http://127.0.0.1:8083',
-        changeOrigin: true,
-        secure: false,
-      },
+      // ── Community service ──────────────────────────────────────────
       '/api/groups': {
         target: 'http://127.0.0.1:8085',
         changeOrigin: true,
@@ -50,6 +48,25 @@ export default defineConfig({
       },
       '/api/posts': {
         target: 'http://127.0.0.1:8085',
+        changeOrigin: true,
+        secure: false,
+      },
+      // ── Notification service — prefix stripped before forwarding ───
+      '/notifications': {
+        target: 'http://127.0.0.1:8086',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/notifications/, ''),
+      },
+      // ── Project service ────────────────────────────────────────────
+      '/api/projects': {
+        target: 'http://127.0.0.1:8084',
+        changeOrigin: true,
+        secure: false,
+      },
+      // ── Team service (catch-all for /api/teams, /api/invitations…) ─
+      '/api': {
+        target: 'http://127.0.0.1:8083',
         changeOrigin: true,
         secure: false,
       },

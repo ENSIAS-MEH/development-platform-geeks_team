@@ -58,7 +58,51 @@ export interface User {
   joinedAt?: string;
 }
 
-// Team Types
+// Team Types (Team Service)
+export interface TeamResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  maxMembers: number;
+  currentMembers: number;
+  status: string;
+  ownerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamMember {
+  id: string;
+  userId: string;
+  teamId: string;
+  role: 'OWNER' | 'MEMBER';
+  joinedAt: string;
+}
+
+export interface TeamCreateRequest {
+  name: string;
+  description?: string;
+  maxMembers: number;
+}
+
+export interface TeamUpdateRequest {
+  name?: string;
+  description?: string;
+  maxMembers?: number;
+}
+
+export interface PaginatedTeamsResponse {
+  content: TeamResponse[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
+// Legacy Team Type (kept for compatibility with other pages)
 export interface Team {
   id: string;
   name: string;
@@ -165,7 +209,7 @@ export interface SpringPage<T> {
   empty: boolean;
 }
 
-// Notification Types
+// Notification Types (legacy UI shape — kept for static mock pages)
 export interface Notification {
   id: string;
   type: 'Team Invite' | 'Event Reminder' | 'Project Update' | 'Comment' | 'System';
@@ -173,6 +217,31 @@ export interface Notification {
   time: string;
   unread: boolean;
   actionUrl?: string;
+}
+
+// Notification Service backend types (match Spring Boot DTOs exactly)
+export type NotificationBackendType =
+  | 'WELCOME_EMAIL'
+  | 'PASSWORD_CHANGED_EMAIL'
+  | 'TEAM_INVITED'
+  | 'TEAM_JOINED';
+
+export type NotificationBackendStatus = 'PENDING' | 'SENT' | 'FAILED';
+
+export interface NotificationBackendResponse {
+  id: string;
+  userId: string;
+  recipientEmail: string | null;
+  displayName: string | null;
+  type: NotificationBackendType;
+  status: NotificationBackendStatus;
+  failureReason: string | null;
+  title: string | null;
+  message: string | null;
+  read: boolean;
+  eventId: string;
+  createdAt: string;
+  sentAt: string | null;
 }
 
 // Message Types

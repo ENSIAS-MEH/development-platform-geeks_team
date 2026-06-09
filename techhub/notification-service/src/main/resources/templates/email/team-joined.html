@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>You Joined a Team</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Arial, sans-serif; color: #333; }
+        .wrapper { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); padding: 40px 32px; text-align: center; }
+        .header h1 { color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: 1px; }
+        .header p  { color: #a0b4c8; font-size: 14px; margin-top: 6px; }
+        .icon { font-size: 48px; margin-top: 12px; }
+        .body { padding: 40px 32px; }
+        .body h2 { font-size: 22px; color: #1a1a2e; margin-bottom: 12px; }
+        .body p  { font-size: 15px; line-height: 1.7; color: #555; margin-bottom: 16px; }
+        .info-box { background: #f0fff4; border-left: 4px solid #22c55e; padding: 16px 20px; border-radius: 4px; margin-bottom: 24px; }
+        .info-box p { margin: 0; font-size: 14px; color: #14532d; }
+        .cta-btn { display: inline-block; margin-top: 8px; padding: 14px 36px; background: #22c55e; color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 6px; }
+        .divider { border: none; border-top: 1px solid #eee; margin: 32px 0; }
+        .footer { background: #f4f6f9; padding: 24px 32px; text-align: center; }
+        .footer p { font-size: 12px; color: #999; line-height: 1.6; }
+        .footer a { color: #0f3460; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <h1 th:text="${appName}">TechHub</h1>
+        <p>Welcome to the team!</p>
+        <div class="icon">🎉</div>
+    </div>
+    <div class="body">
+        <h2>Hi <span th:text="${displayName}">User</span>, you joined a team!</h2>
+        <p>
+            Congratulations! You are now a member of a team on
+            <strong th:text="${appName}">TechHub</strong>.
+        </p>
+        <div class="info-box">
+            <p>Team: <strong th:text="${teamName}">a team</strong></p>
+        </div>
+        <p>
+            Head over to your dashboard to meet your teammates and start collaborating.
+        </p>
+        <hr class="divider"/>
+        <a th:href="${dashboardUrl}" class="cta-btn">View My Teams →</a>
+    </div>
+    <div class="footer">
+        <p>
+            &copy; 2025 <a th:text="${appName}">TechHub</a>. All rights reserved.
+        </p>
+    </div>
+</div>
+</body>
+</html>
