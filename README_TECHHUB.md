@@ -256,23 +256,20 @@ graph TD
 | **Manager / Propriétaire** | Membre pouvant créer et gérer une équipe ou un événement |
 
 
-![Use case diagram](images/usecase.png)
+![Use case diagram](conception diagrams/use_case_diagram.png)
 
 
 ---
 
 ### 7.2 Diagramme de Classes
 
-![class diagram](images/classe.png)
+![class diagram](conception diagrams/class_diagram (1).png)
 
 
 
 ### 7.3 Diagrammes de Séquence
 
-![Sequence diagram 1](images/sequence1.png)
-
----
-![Sequence diagram 2](images/sequence2.png)
+![Sequence diagram 1](conception diagrams/sequence_diagram.png)
 
 
 
