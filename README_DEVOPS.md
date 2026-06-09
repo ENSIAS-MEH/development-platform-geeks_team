@@ -153,7 +153,7 @@ TechHub possède **un workflow GitHub Actions par service**, déclenché uniquem
 
 
 
-### Pipeline Community Service — Flux GitOps Intégré
+### Pipelines Community and User Services — Flux GitOps Intégré
 
 Les pipelines Community Service et Userservice integrent Argocd : après le push de l'image Docker Hub, il **met à jour automatiquement le manifeste K8s** dans le dépôt, déclenchant la synchronisation ArgoCD :
 
