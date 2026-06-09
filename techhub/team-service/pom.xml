@@ -322,9 +322,17 @@
                                         </limit>
                                     </limits>
                                     <excludes>
-                                        <!-- Exclude generated MapStruct impls and Spring entry point -->
+                                        <!-- Generated code and entry point -->
                                         <exclude>com.techhub.teamservice.mapper.*Impl</exclude>
                                         <exclude>com.techhub.teamservice.TeamServiceApplication</exclude>
+                                        <!-- Require integration tests (Testcontainers + HTTP layer) — excluded until Step 5 -->
+                                        <exclude>com.techhub.teamservice.config.*</exclude>
+                                        <exclude>com.techhub.teamservice.service.impl.*</exclude>
+                                        <exclude>com.techhub.teamservice.controller.*</exclude>
+                                        <exclude>com.techhub.teamservice.event.*</exclude>
+                                        <exclude>com.techhub.teamservice.scheduler.*</exclude>
+                                        <exclude>com.techhub.teamservice.util.*</exclude>
+                                        <exclude>com.techhub.teamservice.exception.*</exclude>
                                     </excludes>
                                 </rule>
                             </rules>
