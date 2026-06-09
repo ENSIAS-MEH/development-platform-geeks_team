@@ -31,11 +31,15 @@ public class MailConfig {
         mailSender.setUsername(username);
         mailSender.setPassword(password);
 
+        // Enable auth and TLS only when real credentials are provided.
+        // Empty username = MailHog dev relay (no auth, no TLS).
+        boolean hasCredentials = username != null && !username.isBlank();
+
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
-        props.put("mail.smtp.auth",          "true");
-        props.put("mail.smtp.starttls.enable",    "true");
-        props.put("mail.smtp.starttls.required",  "true");
+        props.put("mail.smtp.auth",                  String.valueOf(hasCredentials));
+        props.put("mail.smtp.starttls.enable",        String.valueOf(hasCredentials));
+        props.put("mail.smtp.starttls.required",      String.valueOf(hasCredentials));
         props.put("mail.debug", "false");
 
         return mailSender;

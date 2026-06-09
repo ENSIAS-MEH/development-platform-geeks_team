@@ -58,6 +58,12 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/notifications/, ''),
       },
+      // ── Project service ────────────────────────────────────────────
+      '/api/projects': {
+        target: 'http://127.0.0.1:8084',
+        changeOrigin: true,
+        secure: false,
+      },
       // ── Team service (catch-all for /api/teams, /api/invitations…) ─
       '/api': {
         target: 'http://127.0.0.1:8083',

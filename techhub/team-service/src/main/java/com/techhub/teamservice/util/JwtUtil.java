@@ -47,9 +47,15 @@ public class JwtUtil {
     }
 
     /**
-     * Extracts the subject (userId) from the token.
+     * Extracts the userId from the token.
+     * Reads the {@code userId} custom claim (UUID string) set by User Service.
+     * Falls back to subject for compatibility.
      */
     public String extractUserId(String token) {
+        final Object userId = parseClaims(token).get("userId");
+        if (userId != null) {
+            return userId.toString();
+        }
         return parseClaims(token).getSubject();
     }
 
