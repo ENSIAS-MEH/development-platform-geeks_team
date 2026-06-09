@@ -1,0 +1,59 @@
+# ══════════════════════════════════════════════════════════════════
+#  application-test.yml  — unit / integration test profile
+#  Activated by: @ActiveProfiles("test") on test classes
+# ══════════════════════════════════════════════════════════════════
+
+spring:
+  datasource:
+    url:        jdbc:h2:mem:team_test_db;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username:   sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
+
+  sql:
+    init:
+      mode: never   # schema.sql has PostgreSQL-only syntax; Hibernate create-drop handles DDL
+
+  # Disable Redis auto-config in unit tests
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+      - org.springframework.boot.autoconfigure.mail.MailAutoConfiguration
+
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
+    producer:
+      key-serializer:   org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: team-test-group
+      auto-offset-reset: earliest
+      key-deserializer:   org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+server:
+  port: 0    # random port for test slices
+
+security:
+  jwt:
+    secret: test_secret_32_characters_long!!
+    expiration-ms: 3600000
+
+app:
+  invitation:
+    expiry-hours: 48
+    scheduler-rate-ms: 60000
+  team:
+    default-max-members: 10
+
+logging:
+  level:
+    root: WARN
+    com.techhub.teamservice: INFO
