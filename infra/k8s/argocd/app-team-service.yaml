@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: team-service
+  namespace: argocd
+  # Ensures all managed K8s resources are deleted when this Application is deleted
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/ENSIAS-MEH/development-platform-geeks_team.git
+    # Change to your feature branch name while testing, then set back to main
+    targetRevision: main
+    path: techhub/team-service/k8s
+    directory:
+      # recurse: false (default) — ArgoCD only reads files directly in this
+      # directory, so dev-deps/ subdirectory is intentionally skipped.
+      recurse: false
+
+  destination:
+    # in-cluster deployment (same cluster as ArgoCD)
+    server: https://kubernetes.default.svc
+    namespace: techhub
+
+  syncPolicy:
+    automated:
+      # Remove resources that exist in the cluster but were deleted from git
+      prune: true
+      # Re-apply if someone manually changes a resource (drift correction)
+      selfHeal: true
+    syncOptions:
+      # Create techhub namespace if it does not exist yet
+      - CreateNamespace=true
+      # Apply resources in server-side apply mode (better for large CRDs)
+      - ServerSideApply=true
+
+  # secret.yaml is gitignored — the Secret is pre-created manually.
+  # ArgoCD will not try to manage or prune it because it is not in git.
+  # No special ignoreDifferences needed.

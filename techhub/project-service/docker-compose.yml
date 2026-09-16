@@ -1,0 +1,38 @@
+services:
+  project-db:
+    image: postgres:16-alpine
+    container_name: project-db
+    environment:
+      POSTGRES_DB: project_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - project_postgres_data:/var/lib/postgresql/data
+
+  project-redis:
+    image: redis:7-alpine
+    container_name: project-redis
+    ports:
+      - "6380:6379"
+
+  project-service:
+    build: .
+    container_name: project-app
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://project-db:5432/project_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      REDIS_HOST: project-redis
+      REDIS_PORT: 6379
+      USER_SERVICE_URL: http://host.docker.internal:8081
+      KAFKA_BOOTSTRAP_SERVERS: host.docker.internal:9092
+    depends_on:
+      - project-db
+      - project-redis
+
+volumes:
+  project_postgres_data:

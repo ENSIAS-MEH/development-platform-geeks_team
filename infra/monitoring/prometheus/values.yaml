@@ -1,0 +1,22 @@
+# Values for kube-prometheus-stack
+
+# We disable Grafana's default sidecar scrape to provide our own dashboard
+grafana:
+  adminPassword: "admin"
+  dashboards:
+    default:
+      community-dashboard:
+        file: ../dashboards/community-dashboard.json
+
+prometheus:
+  prometheusSpec:
+    # Disable default label selector so it scrapes ServiceMonitors across namespaces
+    serviceMonitorSelectorNilUsesHelmValues: false
+    
+    # Custom scrape config for Spring Boot Actuator endpoints
+    additionalScrapeConfigs:
+      - job_name: 'community-service'
+        metrics_path: '/actuator/prometheus'
+        scrape_interval: 15s
+        static_configs:
+          - targets: ['community-service.techhub.svc.cluster.local:8084']

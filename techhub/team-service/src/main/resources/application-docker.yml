@@ -1,0 +1,42 @@
+# ════════════════════════════════════════════════
+#  application-docker.yml  — Docker Compose overrides
+# ════════════════════════════════════════════════
+
+spring:
+  # Disable SQL script initialization — let Hibernate handle DDL
+  sql:
+    init:
+      mode: never
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/team_db
+    username: postgres
+    password: postgres
+
+
+  # DDL generation (create-drop for dev docker)
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+      # Disable Hibernate second-level cache in docker/dev environment to avoid
+      # needing Redisson Hibernate integration in the Docker image.
+      # (The base application.yml enables caching via Redisson in non-docker environments.)
+    properties:
+      hibernate:
+        cache:
+          use_second_level_cache: false
+          use_query_cache: false
+          region:
+            factory_class: org.hibernate.cache.internal.NoCachingRegionFactory
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+  kafka:
+    bootstrap-servers: kafka:9092
+
+server:
+  port: 8083

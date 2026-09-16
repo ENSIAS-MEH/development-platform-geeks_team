@@ -1,0 +1,23 @@
+# ═══════════════════════════════════════════════════════════════
+#  Community Service – Kubernetes ConfigMap
+#  All non-sensitive configuration values
+# ═══════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: community-service-config
+  namespace: techhub
+  labels:
+    app: community-service
+    app.kubernetes.io/part-of: techhub
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/community_db"
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATA_REDIS_HOST: "redis"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  USERSERVICE_URL: "http://userservice:8080"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+  SPRING_APPLICATION_NAME: "community-service"
+  SERVER_PORT: "8084"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus"

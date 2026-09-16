@@ -1,0 +1,21 @@
+# ═══════════════════════════════════════════════════════════════
+#  Community Service – Kubernetes Service
+#  ClusterIP on port 8084
+# ═══════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Service
+metadata:
+  name: community-service
+  namespace: techhub
+  labels:
+    app: community-service
+    app.kubernetes.io/part-of: techhub
+spec:
+  type: ClusterIP
+  selector:
+    app: community-service
+  ports:
+    - name: http
+      port: 8084
+      targetPort: 8084
+      protocol: TCP

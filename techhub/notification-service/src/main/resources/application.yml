@@ -1,0 +1,57 @@
+server:
+  port: ${SERVER_PORT:8086}
+
+spring:
+  application:
+    name: notification-service
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID}
+      auto-offset-reset: ${KAFKA_AUTO_OFFSET_RESET:earliest}
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.projtechhub.techhub.kafka.event,com.projtechhub.notificationservice.kafka.event"
+        spring.json.use.type.headers: false
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+app:
+  name: ${APP_NAME:TechHub}
+  mail:
+    from: ${MAIL_FROM}
+
+kafka:
+  topics:
+    user-registered: ${KAFKA_TOPIC_USER_REGISTERED}
+    user-password-changed: ${KAFKA_TOPIC_USER_PASSWORD_CHANGED}
+    team-invited: ${KAFKA_TOPIC_TEAM_INVITED:team-invited}
+    team-joined: ${KAFKA_TOPIC_TEAM_JOINED:team-joined}

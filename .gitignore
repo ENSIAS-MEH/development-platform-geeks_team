@@ -1,0 +1,53 @@
+# ── Terraform (from main branch) ──────────────────────────────────────────────
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate*
+tfplan
+
+# ── Secrets & local env — NEVER commit these ──────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# Kubernetes secret manifests contain credentials — use Sealed Secrets or Vault
+# in real deployments. Keep the TEMPLATE (secret.yaml.example) committed instead.
+**/k8s/secret.yaml
+**/k8s/secrets.yaml
+
+# ── Build artifacts ───────────────────────────────────────────────────────────
+target/
+build/
+dist/
+*.jar
+*.war
+*.zip
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.eclipse/
+.classpath
+.project
+.settings/
+.factorypath
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Maven wrapper jar (checked in via properties file, not binary) ────────────
+.mvn/wrapper/maven-wrapper.jar
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.swp

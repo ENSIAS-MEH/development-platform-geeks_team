@@ -1,0 +1,28 @@
+# ═══════════════════════════════════════════════════════════════════
+#  Prometheus scrape configuration — TechHub
+#  Governance: doc 02 §14
+# ═══════════════════════════════════════════════════════════════════
+
+global:
+  scrape_interval: 15s      # How often to scrape targets
+  evaluation_interval: 15s  # How often to evaluate alerting rules
+
+scrape_configs:
+
+  # ── Team Service ──────────────────────────────────────────────────
+  - job_name: team-service
+    metrics_path: /api/actuator/prometheus
+    static_configs:
+      - targets: ["team-service:8083"]
+    scrape_interval: 15s
+
+  # ── Prometheus self-scrape ────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ── Add other services as they come online ────────────────────────
+  # - job_name: user-service
+  #   metrics_path: /api/actuator/prometheus
+  #   static_configs:
+  #     - targets: ["user-service:8081"]
