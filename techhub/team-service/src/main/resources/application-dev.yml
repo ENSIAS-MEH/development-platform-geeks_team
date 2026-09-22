@@ -1,0 +1,28 @@
+# ══════════════════════════════════════════════════════════════════
+#  application-dev.yml  — IntelliJ / local machine overrides
+#  Activated by: SPRING_PROFILES_ACTIVE=dev
+# ══════════════════════════════════════════════════════════════════
+
+spring:
+  config:
+    import: "optional:file:.env[.properties]"
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop   # rebuild schema on every IDE restart in dev
+
+  sql:
+    init:
+      mode: never   # Hibernate create-drop owns the schema in dev; schema.sql uses $$ which Spring ScriptUtils can't parse
+
+server:
+  error:
+    include-message:    always
+    include-stacktrace: on_param
+
+logging:
+  level:
+    com.techhub.teamservice: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

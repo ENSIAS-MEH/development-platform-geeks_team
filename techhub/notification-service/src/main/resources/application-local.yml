@@ -1,0 +1,18 @@
+# Profile: local
+# Use when running the app from IntelliJ while infra runs in Docker
+# Activate via: -Dspring.profiles.active=local
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5434/techhub_notifications
+
+  kafka:
+    bootstrap-servers: localhost:9096   # EXTERNAL listener port
+
+  jpa:
+    show-sql: true                      # helpful during local dev
+
+logging:
+  level:
+    com.techhub: DEBUG
+    org.springframework.kafka: INFO

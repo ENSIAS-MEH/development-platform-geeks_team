@@ -1,0 +1,102 @@
+# ═══════════════════════════════════════════════════════════════════
+#  Kubernetes — Team Service Deployment
+#  Governance: doc 02 §4, §5, §14
+#  Namespace: techhub
+#  Resource name: team-service (governance §10.1)
+#  Owner: Member 3
+# ═══════════════════════════════════════════════════════════════════
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: team-service              # governance §10.1
+  namespace: techhub
+  labels:
+    app: team-service
+    version: "1.0.0"
+    managed-by: member-3
+spec:
+  replicas: 2                     # Minimum 2 for HA — adjust per load
+  selector:
+    matchLabels:
+      app: team-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                 # One extra pod during update
+      maxUnavailable: 0           # Zero downtime rolling deploys
+  template:
+    metadata:
+      labels:
+        app: team-service
+      annotations:
+        # Prometheus auto-discovery (governance §14)
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /api/actuator/prometheus
+        prometheus.io/port: "8083"
+    spec:
+      # ── Security context ────────────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: team-service
+          image: ghcr.io/techhub/team-service:latest  # ← pin to SHA in prod
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 8083
+              name: http
+
+          # ── Environment from ConfigMap + Secret ─────────────────
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+            - name: SERVER_PORT
+              value: "8083"
+          envFrom:
+            - configMapRef:
+                name: team-service-config   # governance §10.1
+            - secretRef:
+                name: team-service-secret   # governance §10.1
+
+          # ── Resource limits ──────────────────────────────────────
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"
+
+          # ── Liveness probe (governance §14.1) ───────────────────
+          # Restarts the container if the app is deadlocked
+          livenessProbe:
+            httpGet:
+              path: /api/actuator/health/liveness
+              port: 8083
+            initialDelaySeconds: 60    # Spring Boot startup time
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 10
+
+          # ── Readiness probe (governance §14.1) ──────────────────
+          # Removes the pod from the Service load balancer until ready
+          readinessProbe:
+            httpGet:
+              path: /api/actuator/health/readiness
+              port: 8083
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+
+          # ── Graceful shutdown ────────────────────────────────────
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]  # Allow in-flight requests to drain
+
+      # ── Graceful termination period ──────────────────────────────
+      terminationGracePeriodSeconds: 60

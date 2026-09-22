@@ -1,0 +1,40 @@
+name: Project Service CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'techhub/project-service/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'techhub/project-service/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build and Test with Maven
+        run: |
+          cd techhub/project-service
+          mvn clean test
+
+      - name: Build Docker Image
+        run: |
+          cd techhub/project-service
+          docker build -t devconnect/project-service:${{ github.sha }} .
+
+      # Push image and deployment manifest updates would go here in actual environment

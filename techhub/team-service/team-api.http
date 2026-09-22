@@ -1,0 +1,216 @@
+### ═══════════════════════════════════════════════════════════════
+### TechHub — Team Service HTTP Client
+### IntelliJ IDEA built-in HTTP Client (.http files)
+### No plugin needed — open this file and click the ▶ gutter icon
+### Port: 8084  |  Context: /api  (governance §2.3)
+### ═══════════════════════════════════════════════════════════════
+
+### Variables — edit http-client.env.json for environment values
+### or set here for quick local testing
+
+@baseUrl = http://localhost:8083/api
+@teamId  = a1000000-0000-0000-0000-000000000001
+@invId   = c1000000-0000-0000-0000-000000000001
+@token   = REPLACE_WITH_VALID_JWT
+
+# ─────────────────────────────────────────────────────────────────
+# HEALTH & ACTUATOR (governance §14.1)
+# ─────────────────────────────────────────────────────────────────
+
+### 1. Overall health
+GET {{baseUrl}}/actuator/health
+Accept: application/json
+
+###
+
+### 2. Readiness probe (K8s readiness)
+GET {{baseUrl}}/actuator/health/readiness
+
+###
+
+### 3. Liveness probe (K8s liveness)
+GET {{baseUrl}}/actuator/health/liveness
+
+###
+
+### 4. Service info
+GET {{baseUrl}}/actuator/info
+
+###
+
+### 5. Prometheus metrics scrape endpoint
+GET {{baseUrl}}/actuator/prometheus
+
+###
+
+# ─────────────────────────────────────────────────────────────────
+# TEAM CRUD
+# ─────────────────────────────────────────────────────────────────
+
+### 6. Create a new team
+POST {{baseUrl}}/teams
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "AI Research Team",
+  "maxMembers": 5,
+  "description": "Exploring machine learning frontiers"
+}
+
+> {%
+    client.test("Status is 200 or 201", function() {
+      client.assert(response.status === 200 || response.status === 201,
+        "Expected 200 or 201, got " + response.status);
+    });
+    client.test("Response has id", function() {
+      client.assert(response.body.id !== undefined, "Missing team id");
+    });
+    // Save team id for subsequent requests
+    client.global.set("teamId", response.body.id);
+%}
+
+###
+
+### 7. Get my teams
+GET {{baseUrl}}/teams/my
+Authorization: Bearer {{token}}
+
+> {%
+    client.test("Status 200", function() {
+      client.assert(response.status === 200);
+    });
+    client.test("Response is array", function() {
+      client.assert(Array.isArray(response.body));
+    });
+%}
+
+###
+
+### 8. Get specific team by ID
+GET {{baseUrl}}/teams/{{teamId}}
+Authorization: Bearer {{token}}
+
+###
+
+### 9. Delete team (owner only)
+DELETE {{baseUrl}}/teams/{{teamId}}
+Authorization: Bearer {{token}}
+
+###
+
+### 10. Leave a team
+POST {{baseUrl}}/teams/{{teamId}}/leave
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────────────────────────────
+# TEAM MEMBERS
+# ─────────────────────────────────────────────────────────────────
+
+### 11. Get team members
+GET {{baseUrl}}/teams/{{teamId}}/members
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────────────────────────────
+# INVITATIONS
+# ─────────────────────────────────────────────────────────────────
+
+### 12. Invite a user to a team
+POST {{baseUrl}}/teams/{{teamId}}/invite
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "receiverId": "u1000000-0000-0000-0000-000000000008"
+}
+
+> {%
+    client.test("Invitation created", function() {
+      client.assert(response.status === 200 || response.status === 201);
+    });
+    if (response.body.id) {
+      client.global.set("invId", response.body.id);
+    }
+%}
+
+###
+
+### 13. Get my pending invitations
+GET {{baseUrl}}/invitations/my
+Authorization: Bearer {{token}}
+
+###
+
+### 14. Accept an invitation
+POST {{baseUrl}}/invitations/{{invId}}/accept
+Authorization: Bearer {{token}}
+
+> {%
+    client.test("Accepted (200)", function() {
+      client.assert(response.status === 200);
+    });
+%}
+
+###
+
+### 15. Decline an invitation
+POST {{baseUrl}}/invitations/{{invId}}/decline
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────────────────────────────
+# ERROR CASES (for testing GlobalExceptionHandler)
+# ─────────────────────────────────────────────────────────────────
+
+### 16. Get non-existent team → expect 404
+GET {{baseUrl}}/teams/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+
+> {%
+    client.test("404 for unknown team", function() {
+      client.assert(response.status === 404);
+    });
+    client.test("No stack trace in response", function() {
+      client.assert(response.body.trace === undefined,
+        "Stack trace must never be exposed");
+    });
+%}
+
+###
+
+### 17. Create team with missing fields → expect 400 + validation errors
+POST {{baseUrl}}/teams
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "missing name and maxMembers"
+}
+
+> {%
+    client.test("400 validation error", function() {
+      client.assert(response.status === 400);
+    });
+    client.test("fieldErrors present", function() {
+      client.assert(response.body.fieldErrors !== undefined,
+        "Expected fieldErrors map in response");
+    });
+%}
+
+###
+
+### 18. Unauthenticated request → expect 401
+GET {{baseUrl}}/teams/my
+
+> {%
+    client.test("401 without token", function() {
+      client.assert(response.status === 401);
+    });
+%}
+
+###

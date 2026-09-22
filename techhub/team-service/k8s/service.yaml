@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: team-service
+  namespace: techhub
+  labels:
+    app: team-service
+spec:
+  type: ClusterIP
+  selector:
+    app: team-service
+  ports:
+    - name: http
+      port: 8083
+      targetPort: 8083
+      protocol: TCP

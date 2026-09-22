@@ -1,0 +1,14 @@
+# Profile: docker
+# Activated by SPRING_PROFILES_ACTIVE=docker (set in docker-compose)
+# Overrides application.yml settings for the containerised dev environment.
+
+spring:
+  mail:
+    # MailHog SMTP — no auth or TLS (catches all mail, view at http://localhost:8025)
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false

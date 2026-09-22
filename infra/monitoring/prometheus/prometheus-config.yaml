@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-server-conf
+  namespace: devconnect
+  labels:
+    name: prometheus-server-conf
+data:
+  prometheus.yml: |-
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: apiserver
+
+      - job_name: 'spring-boot-services'
+        metrics_path: '/actuator/prometheus'
+        scrape_interval: 5s
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: (project-service|event-service)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: keep
+            regex: devconnect
+          - source_labels: [__meta_kubernetes_pod_container_port_number]
+            action: keep
+            regex: (8082|8083)
