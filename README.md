@@ -58,7 +58,7 @@ TechHub est une **plateforme communautaire centralisée**, développée dans le 
 
 | Membre | GitHub | Rôle | Responsabilités principales |
 |--------|--------|------|-----------------------------|
-| **Alae LABHAL** | [@Alae-eng](https://github.com/Alae-eng) | Backend — User Service | Authentification JWT, gestion des profils, OAuth2 GitHub/Google, intégration Redis |
+| **Alae LABHAL** | [@Alae-eng](https://github.com/Alae-eng) | Backend — User Service | Authentification JWT, OAuth2 GitHub/Google, intégration Kafka, Redis, actions utilisateurs, CI/CD pipeline et architecture  |
 | **Hafsa ABBAR** | [@Hafsaabbar](https://github.com/Hafsaabbar) | Backend — Community Service | Groupes thématiques, interactions communautaires, API REST, cache Redis |
 | **Halima ANEJARI** | [@Hali24-tech](https://github.com/Hali24-tech) | Backend — Event & Project Service | Gestion des événements, des projets collaboratifs, pipeline CI/CD event-service |
 | **Kawtar LAMEGHAIZI** | [@KLdevs007](https://github.com/KLdevs007) | Backend — Team & Notification Service | Équipes, invitations, expiration scheduler, Kafka producer/consumer, emails MailHog |
